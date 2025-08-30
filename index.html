@@ -1,4 +1,4 @@
-   <!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -100,18 +100,17 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                onAuthStateChanged(auth, async (user) => {
+                // Autentica o usuário logo no início
+                signIn();
+
+                onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
                         console.log("Usuário autenticado. ID do usuário:", userId);
-                        isAuthReady = true;
-                        // Aqui, se o usuário já estiver logado, a gente poderia ir pra outra tela.
-                        // Mas por enquanto, a gente só vai logar no console.
-                        feedbackMsg.textContent = "Usuário logado com sucesso!";
                     } else {
                         console.log("Usuário não autenticado. O processo de login está no início.");
-                        isAuthReady = true; 
                     }
+                    isAuthReady = true;
                 });
             } catch (error) {
                 console.error("Erro ao inicializar Firebase:", error);
@@ -150,7 +149,7 @@
 
                 // Garante que o usuário está autenticado antes de salvar os dados
                 if (!isAuthReady || !auth.currentUser) {
-                    await signIn();
+                    throw new Error("Usuário não autenticado. Por favor, espere a autenticação ser concluída.");
                 }
 
                 if (auth.currentUser) {
@@ -168,8 +167,6 @@
                     console.log("Usuário cadastrado com sucesso!");
                     feedbackMsg.textContent = "Cadastro concluído! Olhe o console para a confirmação.";
                     
-                } else {
-                    throw new Error("Usuário não autenticado após a tentativa de login.");
                 }
                 
             } catch (error) {
