@@ -1,4 +1,4 @@
-              <!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -42,42 +42,6 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 2rem;
         }
-
-        #map-screen {
-            width: 100vw;
-            height: 100vh;
-            padding: 0;
-            margin: 0;
-            position: relative;
-        }
-
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-
-        #user-info-bar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background-color: #1f2937;
-            color: #ffffff;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-        .pulse-animation {
-            animation: pulse 1.5s infinite;
-        }
     </style>
 </head>
 <body>
@@ -103,30 +67,15 @@
             </button>
             <p id="feedback-msg" class="mt-4 text-red-500 text-sm text-center"></p>
         </div>
-
-        <!-- Tela do Mapa -->
-        <div id="map-screen" class="screen">
-            <div id="user-info-bar">
-                <div class="flex flex-col">
-                    <span class="text-sm text-gray-300">Olá,</span>
-                    <span id="display-name" class="font-bold text-lg"></span>
-                </div>
-                <div class="flex flex-col items-end">
-                    <span id="display-id" class="text-xs text-gray-400">ID:</span>
-                    <span id="display-role" class="text-sm font-semibold text-gray-400 capitalize"></span>
-                </div>
-            </div>
-            <div id="map"></div>
-        </div>
     </div>
 
-    <!-- Firebase Imports -->
+    <!-- Imports do Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables provided by the environment
+        // Variáveis globais fornecidas pelo ambiente
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -136,43 +85,32 @@
         let db;
         let userId;
 
-        // UI elements
-        const loginScreen = document.getElementById('login-screen');
-        const mapScreen = document.getElementById('map-screen');
+        // Elementos da interface
         const cadastrarBtn = document.getElementById('cadastrar-btn');
         const nomeInput = document.getElementById('nome');
         const tipoUsuarioSelect = document.getElementById('tipoUsuario');
         const feedbackMsg = document.getElementById('feedback-msg');
-        const displayNameSpan = document.getElementById('display-name');
-        const displayIdSpan = document.getElementById('display-id');
-        const displayRoleSpan = document.getElementById('display-role');
 
         let isAuthReady = false;
 
-        // Firebase Initialization
+        // Função para inicializar o Firebase
         function initializeFirebase() {
             try {
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                // Handle user authentication state changes
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
-                        console.log("Usuário autenticado:", userId);
+                        console.log("Usuário autenticado. ID do usuário:", userId);
                         isAuthReady = true;
-                        // Check if user data exists in Firestore, then show map
-                        const userRef = doc(db, 'artifacts', appId, 'users', userId, 'users', userId);
-                        const userSnap = await getDoc(userRef);
-                        if (userSnap.exists()) {
-                            console.log("Dados do usuário encontrados, mostrando o mapa.");
-                            const userData = userSnap.data();
-                            showMap(userData);
-                        }
+                        // Aqui, se o usuário já estiver logado, a gente poderia ir pra outra tela.
+                        // Mas por enquanto, a gente só vai logar no console.
+                        feedbackMsg.textContent = "Usuário logado com sucesso!";
                     } else {
-                        console.log("Usuário não autenticado. O usuário pode ter saído ou ainda está no processo de login.");
-                        isAuthReady = true; // Still ready to handle authentication logic
+                        console.log("Usuário não autenticado. O processo de login está no início.");
+                        isAuthReady = true; 
                     }
                 });
             } catch (error) {
@@ -181,6 +119,7 @@
             }
         }
 
+        // Função para autenticar o usuário
         async function signIn() {
             try {
                 if (initialAuthToken) {
@@ -194,10 +133,10 @@
             }
         }
 
-        // Register user and save to Firestore
+        // Função para cadastrar e salvar os dados no Firestore
         async function cadastrarUsuario() {
             const nome = nomeInput.value.trim();
-            const tipo = tipoUsuarioSelect.value;
+            const tipoUsuario = tipoUsuarioSelect.value;
             
             feedbackMsg.textContent = '';
             if (!nome) {
@@ -209,7 +148,7 @@
                 cadastrarBtn.textContent = 'Carregando...';
                 cadastrarBtn.disabled = true;
 
-                // Ensure user is authenticated before saving data
+                // Garante que o usuário está autenticado antes de salvar os dados
                 if (!isAuthReady || !auth.currentUser) {
                     await signIn();
                 }
@@ -220,50 +159,25 @@
                     
                     const userData = {
                         nome,
-                        tipo,
-                        createdAt: new Date()
+                        tipo: tipoUsuario,
+                        createdAt: new Date(),
+                        last_location: null,
                     };
                     
                     await setDoc(userRef, userData, { merge: true });
                     console.log("Usuário cadastrado com sucesso!");
+                    feedbackMsg.textContent = "Cadastro concluído! Olhe o console para a confirmação.";
                     
-                    showMap(userData);
                 } else {
                     throw new Error("Usuário não autenticado após a tentativa de login.");
                 }
                 
             } catch (error) {
                 console.error("Erro ao cadastrar usuário:", error);
-                feedbackMsg.textContent = `Erro ao cadastrar. Verifique a conexão. Detalhes: ${error.message}`;
+                feedbackMsg.textContent = `Erro ao cadastrar. Detalhes: ${error.message}`;
             } finally {
                 cadastrarBtn.textContent = 'Cadastrar e Entrar';
                 cadastrarBtn.disabled = false;
-            }
-        }
-
-        // Show the map screen and initialize it
-        function showMap(userData) {
-            loginScreen.classList.remove('active');
-            mapScreen.classList.add('active');
-
-            displayNameSpan.textContent = userData.nome;
-            displayIdSpan.textContent = `ID: ${userId.substring(0, 8)}...`;
-            displayRoleSpan.textContent = userData.tipo;
-
-            initializeMap();
-        }
-
-        // Initialize Google Maps (placeholder)
-        function initializeMap() {
-            // Placeholder for Google Maps logic
-            console.log("Mapa sendo inicializado...");
-            const mapContainer = document.getElementById('map');
-            if (mapContainer) {
-                mapContainer.innerHTML = `
-                    <div class="flex items-center justify-center h-full text-center text-gray-500 p-4">
-                        <p>O mapa aparecerá aqui!</p>
-                    </div>
-                `;
             }
         }
 
