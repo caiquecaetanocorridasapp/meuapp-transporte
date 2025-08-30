@@ -1,2 +1,826 @@
-# meuapp-transporte
-meu aplicativo de transporte
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu App de Transporte</title>
+    <!-- Carrega o Tailwind CSS para estilizar os elementos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carrega a biblioteca Leaflet para o mapa -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        xintegrity="sha512-xodxNY+H3Fz5l5G8B6Kq8lD0h3t0V5f4y4h5+Wz3Z4Z4M+Z4V4y4w=="
+        crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        xintegrity="sha512-XODxNY+H3Fz5l5G8B6Kq8lD0h3t0V5f4y4h5+Wz3Z4Z4M+Z4V4y4w=="
+        crossorigin=""></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        #app-container {
+            width: 100%;
+            max-width: 600px;
+            height: 80vh;
+            border-radius: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        #map {
+            flex-grow: 1;
+        }
+        #chat-container {
+            display: none;
+        }
+        .chat-message.user {
+            background-color: #e0e7ff; /* light-indigo-100 */
+            align-self: flex-end;
+            text-align: right;
+        }
+        .chat-message.driver {
+            background-color: #f1f5f9; /* light-slate-100 */
+            align-self: flex-start;
+            text-align: left;
+        }
+        .chat-message {
+            max-width: 80%;
+        }
+        .rating-star {
+            cursor: pointer;
+            font-size: 2rem;
+            color: #d1d5db; /* gray-400 */
+            transition: color 0.2s;
+        }
+        .rating-star.filled {
+            color: #fcd34d; /* yellow-300 */
+        }
+        .ride-card {
+            background-color: #f9fafb;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 1rem;
+            border: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center p-4">
+    <!-- Contêiner Principal do Aplicativo -->
+    <div id="app-container" class="relative rounded-3xl overflow-hidden shadow-2xl flex flex-col w-full max-w-lg h-[85vh]">
+        <!-- Contêiner do Formulário de Cadastro (visível por padrão) -->
+        <div id="registration-container" class="absolute inset-0 z-10 bg-white flex flex-col items-center justify-center p-6">
+            <h2 class="text-3xl font-extrabold text-gray-900 mb-6 text-center">Cadastro</h2>
+            <form id="registration-form" class="w-full max-w-sm bg-gray-50 p-8 rounded-2xl shadow-lg">
+                <div class="mb-6">
+                    <label for="name-input" class="block text-gray-700 font-bold mb-2">Qual o seu nome?</label>
+                    <input type="text" id="name-input" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+                <div class="mb-8">
+                    <label class="block text-gray-700 font-bold mb-2">O que você é?</label>
+                    <div class="flex items-center space-x-4">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="user-type" value="passenger" class="form-radio text-indigo-600 h-5 w-5" required>
+                            <span class="ml-2 text-gray-700">Passageiro</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="user-type" value="driver" class="form-radio text-indigo-600 h-5 w-5">
+                            <span class="ml-2 text-gray-700">Motorista</span>
+                        </label>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    Cadastrar e Entrar
+                </button>
+            </form>
+        </div>
+
+        <!-- Conteúdo principal (Mapa e Chat) -->
+        <div id="main-content" class="w-full flex-grow flex flex-col hidden">
+            <!-- A tela do mapa e do chat agora são exibidas condicionalmente -->
+            <div id="map-chat-container" class="w-full flex-grow flex flex-col">
+                <div id="map" class="w-full flex-grow"></div>
+                <div id="chat-container" class="w-full flex-grow flex flex-col p-4 bg-gray-50 overflow-y-auto">
+                    <div id="messages" class="flex flex-col space-y-2 flex-grow overflow-y-auto pb-4">
+                        <!-- Mensagens do chat serão adicionadas aqui -->
+                    </div>
+                    <div class="flex items-center space-x-2 pt-2">
+                        <input type="text" id="chat-input" placeholder="Digite uma mensagem..." class="flex-grow p-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        <button id="send-button" class="bg-indigo-600 text-white rounded-full p-3 transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tela de "estado inicial" para passageiro (visível por padrão) -->
+            <div id="initial-state-container" class="w-full flex-grow flex flex-col items-center justify-center p-6 text-center hidden">
+                <h2 class="text-3xl font-extrabold text-gray-900 mb-4">Toca aqui pra pedir sua corrida</h2>
+                <p class="text-gray-500 mb-6">É facinho, facinho!</p>
+                <div class="mb-4 w-full max-w-sm">
+                    <label for="scheduled-time" class="block text-gray-700 font-bold mb-2">Ou agende sua viagem:</label>
+                    <input type="datetime-local" id="scheduled-time" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+            </div>
+
+            <!-- Tela de "corridas disponíveis" para motorista (novo) -->
+            <div id="driver-rides-list" class="w-full flex-grow flex flex-col p-6 overflow-y-auto hidden">
+                <h2 class="text-3xl font-extrabold text-gray-900 mb-4 text-center">Corridas Disponíveis</h2>
+                <div id="rides-list-container" class="w-full max-w-sm mx-auto">
+                    <!-- Lista de corridas será inserida aqui -->
+                </div>
+                <p id="no-rides-message" class="text-center text-gray-500 mt-8 hidden">
+                    Nenhuma corrida disponível no momento.
+                </p>
+            </div>
+        </div>
+
+        <!-- Título e Status -->
+        <div class="p-6 bg-white border-b border-gray-200">
+            <h1 class="text-3xl font-extrabold text-gray-900 text-center">App de Transporte</h1>
+            <p id="status-message" class="mt-2 text-center text-gray-600">
+                Aguardando sua solicitação...
+            </p>
+            <p id="trip-info-display" class="mt-1 text-center text-sm text-indigo-600 font-bold hidden">
+                <!-- Informações de tempo e distância serão exibidas aqui -->
+            </p>
+            <p id="user-id-display" class="mt-1 text-center text-sm text-gray-400 truncate">ID: ...</p>
+        </div>
+
+        <!-- Informações da Viagem, Pagamento e Avaliação (escondido inicialmente) -->
+        <div id="trip-details-container" class="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 hidden">
+            <div id="fare-display" class="p-4 bg-green-50 rounded-xl text-green-800 font-extrabold text-3xl mb-6 text-center">
+                <!-- O valor da corrida será inserido aqui -->
+            </div>
+
+            <!-- Seção de Pagamento -->
+            <div id="payment-section">
+                <h2 class="text-xl font-bold text-gray-700 mb-2">Detalhes de Pagamento</h2>
+                <!-- Nova seção para pagamento Pix -->
+                <div id="pix-payment-section" class="mt-4 w-full max-w-sm">
+                    <p class="text-center text-gray-600 mb-4">O pagamento será realizado via Pix.</p>
+                    <button id="pay-pix-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        Pagar com Pix
+                    </button>
+                </div>
+                <p id="payment-status" class="mt-4 text-sm text-gray-500"></p>
+            </div>
+
+            <!-- Seção de Avaliação (inicialmente escondida) -->
+            <div id="rating-section" class="mt-8 hidden">
+                <h2 class="text-xl font-bold text-gray-700 mb-2">Avalie sua viagem:</h2>
+                <div class="flex space-x-1">
+                    <span class="rating-star" data-rating="1">★</span>
+                    <span class="rating-star" data-rating="2">★</span>
+                    <span class="rating-star" data-rating="3">★</span>
+                    <span class="rating-star" data-rating="4">★</span>
+                    <span class="rating-star" data-rating="5">★</span>
+                </div>
+                <button id="submit-rating-button" class="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 hidden">
+                    Enviar Avaliação
+                </button>
+                <p id="rating-status" class="mt-2 text-sm text-gray-500"></p>
+            </div>
+        </div>
+
+        <!-- Botões de Ação para Passageiro -->
+        <div id="passenger-actions" class="p-6 bg-white border-t border-gray-200 flex space-x-4 hidden">
+            <button id="request-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
+                Solicitar Carro
+            </button>
+            <button id="cancel-button" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-6 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 hidden">
+                Cancelar Corrida
+            </button>
+            <button id="toggle-chat-button" class="hidden bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-4 px-6 rounded-full text-lg transition-all duration-300 shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
+                Chat
+            </button>
+        </div>
+
+        <!-- Botões de Ação para Motorista -->
+        <div id="driver-actions" class="p-6 bg-white border-t border-gray-200 flex space-x-4 hidden">
+            <button id="find-rides-button" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
+                Procurar Corridas
+            </button>
+            <button id="accept-ride-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 hidden">
+                Aceitar Corrida
+            </button>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc, doc, getDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Variáveis globais fornecidas pelo ambiente
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+            // Inicializa o Firebase
+            let app;
+            let db;
+            let auth;
+            let userId = null;
+            let currentUserData = null;
+            let currentRideId = null;
+            let onDemandListener = null;
+            let scheduledRideListener = null;
+
+            // Elementos de Cadastro
+            const registrationContainer = document.getElementById('registration-container');
+            const registrationForm = document.getElementById('registration-form');
+            const nameInput = document.getElementById('name-input');
+            const appContainer = document.getElementById('app-container');
+            const userIdDisplay = document.getElementById('user-id-display');
+            const mainContent = document.getElementById('main-content');
+
+            // Elementos do App
+            const statusMessage = document.getElementById('status-message');
+            const mapContainer = document.getElementById('map');
+            const chatContainer = document.getElementById('chat-container');
+            const messagesContainer = document.getElementById('messages');
+            const chatInput = document.getElementById('chat-input');
+            const sendButton = document.getElementById('send-button');
+            const passengerActions = document.getElementById('passenger-actions');
+            const driverActions = document.getElementById('driver-actions');
+            const requestButton = document.getElementById('request-button');
+            const cancelButton = document.getElementById('cancel-button');
+            const toggleChatButton = document.getElementById('toggle-chat-button');
+            const findRidesButton = document.getElementById('find-rides-button');
+            const acceptRideButton = document.getElementById('accept-ride-button');
+            const mapChatContainer = document.getElementById('map-chat-container');
+            const initialStateContainer = document.getElementById('initial-state-container');
+            const scheduledTimeInput = document.getElementById('scheduled-time');
+            const driverRidesListContainer = document.getElementById('driver-rides-list');
+            const ridesList = document.getElementById('rides-list-container');
+            const noRidesMessage = document.getElementById('no-rides-message');
+
+            // Novos elementos de informação da corrida
+            const tripInfoDisplay = document.getElementById('trip-info-display');
+
+            // Novos elementos para pagamento e avaliação
+            const tripDetailsContainer = document.getElementById('trip-details-container');
+            const fareDisplay = document.getElementById('fare-display');
+            const paymentSection = document.getElementById('payment-section');
+            const payPixButton = document.getElementById('pay-pix-button'); // Novo botão do Pix
+            const paymentStatus = document.getElementById('payment-status');
+            const ratingSection = document.getElementById('rating-section');
+            const ratingStars = ratingSection.querySelectorAll('.rating-star');
+            const submitRatingButton = document.getElementById('submit-rating-button');
+            const ratingStatus = document.getElementById('rating-status');
+
+
+            try {
+                if (Object.keys(firebaseConfig).length) {
+                    app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+                    console.log("Firebase inicializado.");
+
+                    if (initialAuthToken) {
+                        try {
+                            const userCredential = await signInWithCustomToken(auth, initialAuthToken);
+                            userId = userCredential.user.uid;
+                            console.log("Autenticado com token personalizado.");
+                        } catch (error) {
+                            console.error("Erro ao autenticar com token, tentando login anônimo:", error);
+                            const userCredential = await signInAnonymously(auth);
+                            userId = userCredential.user.uid;
+                            console.log("Autenticado anonimamente.");
+                        }
+                    } else {
+                        const userCredential = await signInAnonymously(auth);
+                        userId = userCredential.user.uid;
+                        console.log("Autenticado anonimamente.");
+                    }
+                } else {
+                    console.error("Configurações do Firebase não encontradas. O aplicativo de transporte e chat não funcionará corretamente.");
+                    return;
+                }
+            } catch (e) {
+                console.error("Erro na inicialização do Firebase: ", e);
+                return;
+            }
+
+            const usersRef = collection(db, `artifacts/${appId}/public/data/users`);
+            const userDocRef = doc(usersRef, userId);
+
+            // Funções de inicialização da interface
+            const initializeAppUI = async (userData) => {
+                currentUserData = userData;
+                registrationContainer.classList.add('hidden');
+                mainContent.classList.remove('hidden'); // Exibe o conteúdo principal
+                userIdDisplay.textContent = `ID: ${currentUserData.name} (${currentUserData.type})`;
+                
+                if (currentUserData.type === 'passenger') {
+                    passengerActions.classList.remove('hidden');
+                    driverActions.classList.add('hidden');
+                    mapChatContainer.classList.add('hidden'); // Esconde o mapa inicialmente
+                    initialStateContainer.classList.remove('hidden'); // Mostra a tela inicial
+                    driverRidesListContainer.classList.add('hidden');
+                } else if (currentUserData.type === 'driver') {
+                    passengerActions.classList.add('hidden');
+                    driverActions.classList.remove('hidden');
+                    mapChatContainer.classList.add('hidden');
+                    initialStateContainer.classList.add('hidden');
+                    driverRidesListContainer.classList.remove('hidden');
+                }
+            };
+            
+            // Tenta carregar os dados do usuário
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+                await initializeAppUI(userDoc.data());
+            }
+            
+            // Lógica de Submissão do Formulário de Cadastro
+            registrationForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = nameInput.value;
+                const userType = document.querySelector('input[name="user-type"]:checked').value;
+                
+                const newUser = {
+                    name: name,
+                    type: userType,
+                    timestamp: serverTimestamp()
+                };
+
+                try {
+                    await setDoc(userDocRef, newUser);
+                    console.log("Usuário cadastrado com sucesso!");
+                    await initializeAppUI(newUser);
+                } catch (e) {
+                    console.error("Erro ao cadastrar o usuário: ", e);
+                }
+            });
+
+
+            // Inicializa as coordenadas e o mapa
+            const initialCoords = [-23.5505, -46.6333]; // Coordenadas de São Paulo
+            let map; // Inicializa o mapa sem valor
+            let userMarker, driverMarker, routePolyline;
+            let driverInterval;
+            
+            function initializeMap() {
+                if (map) return; // Evita inicializar o mapa várias vezes
+                map = L.map('map').setView(initialCoords, 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+                console.log("Mapa inicializado.");
+            }
+
+            // --- Lógica do Chat (Firestore) ---
+            const chatRef = collection(db, `artifacts/${appId}/public/data/chats`);
+            const chatQuery = query(chatRef, orderBy('timestamp'));
+
+            if (db) {
+                onSnapshot(chatQuery, (snapshot) => {
+                    messagesContainer.innerHTML = '';
+                    snapshot.forEach(doc => {
+                        const message = doc.data();
+                        const isCurrentUser = message.userId === userId;
+                        const messageElement = document.createElement('div');
+                        messageElement.textContent = message.text;
+                        messageElement.className = `chat-message p-3 rounded-xl shadow-sm text-sm ${isCurrentUser ? 'user' : 'driver'} mt-2`;
+                        messagesContainer.appendChild(messageElement);
+                    });
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                });
+            }
+
+            sendButton.addEventListener('click', async () => {
+                const messageText = chatInput.value.trim();
+                if (messageText && db) {
+                    await addDoc(chatRef, {
+                        userId: userId,
+                        text: messageText,
+                        timestamp: serverTimestamp()
+                    });
+                    chatInput.value = '';
+                }
+            });
+
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendButton.click();
+                }
+            });
+            
+            // --- Lógica do Aplicativo de Transporte ---
+            const ridesRef = collection(db, `artifacts/${appId}/public/data/rides`);
+            let passengerLocation = null;
+
+            function getUserLocation() {
+                // Simula uma localização real
+                const userLocation = L.latLng(initialCoords[0] + 0.01, initialCoords[1] + 0.02);
+                if (userMarker) {
+                    map.removeLayer(userMarker);
+                }
+                userMarker = L.marker(userLocation).addTo(map)
+                    .bindPopup('Sua localização').openPopup();
+                map.setView(userLocation, 15);
+                return userLocation;
+            }
+
+            function resetRideUI(message) {
+                if (driverInterval) {
+                    clearInterval(driverInterval);
+                }
+                if (userMarker) {
+                    map.removeLayer(userMarker);
+                }
+                if (driverMarker) {
+                    map.removeLayer(driverMarker);
+                }
+                if (routePolyline) {
+                    map.removeLayer(routePolyline);
+                }
+                statusMessage.textContent = message;
+                tripInfoDisplay.classList.add('hidden');
+                toggleChatButton.classList.add('hidden');
+                tripDetailsContainer.classList.add('hidden');
+                
+                // Reseta a seção de pagamento
+                paymentSection.classList.remove('hidden');
+                paymentStatus.textContent = '';
+                
+                // Reseta a seção de avaliação
+                ratingSection.classList.add('hidden');
+                submitRatingButton.classList.add('hidden');
+                submitRatingButton.disabled = false;
+                ratingStatus.textContent = '';
+                ratingStars.forEach(s => s.classList.remove('filled'));
+
+                if (currentUserData.type === 'passenger') {
+                    requestButton.classList.remove('hidden');
+                    requestButton.disabled = false;
+                    requestButton.textContent = 'Solicitar Carro';
+                    cancelButton.classList.add('hidden');
+                    mapChatContainer.classList.add('hidden');
+                    initialStateContainer.classList.remove('hidden');
+                    driverRidesListContainer.classList.add('hidden');
+                } else if (currentUserData.type === 'driver') {
+                    findRidesButton.classList.remove('hidden');
+                    findRidesButton.disabled = false;
+                    findRidesButton.textContent = 'Procurar Corridas';
+                    acceptRideButton.classList.add('hidden');
+                    mapChatContainer.classList.add('hidden');
+                    initialStateContainer.classList.add('hidden');
+                    driverRidesListContainer.classList.remove('hidden');
+                    ridesList.innerHTML = '';
+                    noRidesMessage.classList.add('hidden');
+
+                    if (map) { // Verifica se o mapa foi inicializado
+                        map.setView(initialCoords, 13);
+                    }
+                }
+
+                currentRideId = null;
+                // Para o listener do motorista
+                if (onDemandListener) {
+                    onDemandListener();
+                    onDemandListener = null;
+                }
+                if (scheduledRideListener) {
+                    scheduledRideListener();
+                    scheduledRideListener = null;
+                }
+            }
+
+            function simulateDriverArrival(rideDocRef, driverStart, passengerLocation) {
+                const carIcon = L.divIcon({
+                    html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#3b82f6" class="w-8 h-8">
+                            <path d="M7.5 7.5a3 3 0 100 6 3 3 0 000-6z"></path>
+                            <path fill-rule="evenodd" d="M11.536 1.125A6.002 6.002 0 006 12a6.002 6.002 0 005.536 10.875A8.966 8.966 0 0112 21a8.966 8.966 0 01.464-1.125A6.002 6.002 0 0018 12a6.002 6.002 0 00-6-6 6.002 6.002 0 00-6 6c0 1.258.337 2.454.945 3.513A8.971 8.971 0 0112 3c1.789 0 3.524.316 5.105.942a6.002 6.002 0 00-5.536-2.817z" clip-rule="evenodd"></path>
+                        </svg>`,
+                    className: '',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16],
+                    popupAnchor: [0, -10]
+                });
+
+                if (driverMarker) {
+                    map.removeLayer(driverMarker);
+                }
+                driverMarker = L.marker(driverStart, { icon: carIcon }).addTo(map)
+                    .bindPopup('Seu motorista está a caminho!');
+
+                const routePoints = [driverStart, passengerLocation];
+                if (routePolyline) {
+                    map.removeLayer(routePolyline);
+                }
+                routePolyline = L.polyline(routePoints, { color: 'blue', weight: 5, opacity: 0.7 }).addTo(map);
+
+                const steps = 100;
+                let stepCount = 0;
+                const totalDistanceKm = driverStart.distanceTo(passengerLocation) / 1000;
+                const avgSpeedKmH = 40; 
+                const totalTimeMinutes = (totalDistanceKm / avgSpeedKmH) * 60;
+                
+                tripInfoDisplay.classList.remove('hidden');
+
+                driverInterval = setInterval(() => {
+                    stepCount++;
+                    const progress = stepCount / steps;
+                    const remainingDistanceKm = totalDistanceKm * (1 - progress);
+                    const remainingTimeMinutes = totalTimeMinutes * (1 - progress);
+
+                    // Atualiza a posição do motorista
+                    const lat = driverStart.lat + ((passengerLocation.lat - driverStart.lat) / steps) * stepCount;
+                    const lng = driverStart.lng + ((passengerLocation.lng - driverStart.lng) / steps) * stepCount;
+                    driverMarker.setLatLng([lat, lng]);
+
+                    // Atualiza as informações da viagem
+                    tripInfoDisplay.textContent = 
+                        `Distância: ${remainingDistanceKm.toFixed(1)} km - Tempo Estimado: ${Math.round(remainingTimeMinutes)} min`;
+
+                    if (stepCount >= steps) {
+                        clearInterval(driverInterval);
+                        statusMessage.textContent = 'O motorista chegou!';
+                        
+                        // Mostra as informações da viagem e avaliação
+                        const simulatedFare = (Math.random() * (45 - 15) + 15).toFixed(2).replace('.', ',');
+                        fareDisplay.textContent = `Valor da corrida: R$ ${simulatedFare}`;
+                        tripDetailsContainer.classList.remove('hidden');
+                        
+                        // Atualiza o status da corrida para 'completed' no Firestore
+                        updateDoc(rideDocRef, { status: 'completed' });
+                        tripInfoDisplay.classList.add('hidden');
+                        
+                        // Esconde o mapa novamente
+                        mapChatContainer.classList.add('hidden');
+                        
+                    } else {
+                        statusMessage.textContent = `Motorista a caminho...`;
+                    }
+                }, 50);
+            }
+
+            // --- Lógica de Pagamento (agora via Pix) ---
+            payPixButton.addEventListener('click', () => {
+                paymentStatus.textContent = 'Processando pagamento via Pix...';
+                paymentStatus.classList.remove('text-red-600');
+                paymentStatus.classList.add('text-gray-500');
+
+                // Simula o processamento do pagamento
+                setTimeout(() => {
+                    paymentStatus.textContent = 'Pagamento aprovado!';
+                    paymentStatus.classList.remove('text-gray-500');
+                    paymentStatus.classList.add('text-green-600');
+                    
+                    // Esconde a seção de pagamento e mostra a de avaliação
+                    paymentSection.classList.add('hidden');
+                    ratingSection.classList.remove('hidden');
+                }, 2000); // Simula 2 segundos de processamento
+            });
+
+            // --- Lógica de Avaliação ---
+            let selectedRating = 0;
+            const ratingsRef = collection(db, `artifacts/${appId}/public/data/ratings`);
+            
+            ratingStars.forEach(star => {
+                star.addEventListener('click', () => {
+                    selectedRating = parseInt(star.dataset.rating);
+                    ratingStars.forEach(s => {
+                        s.classList.toggle('filled', parseInt(s.dataset.rating) <= selectedRating);
+                    });
+                    submitRatingButton.classList.remove('hidden');
+                });
+            });
+
+            submitRatingButton.addEventListener('click', async () => {
+                if (selectedRating > 0 && db) {
+                    ratingStatus.textContent = 'Enviando avaliação...';
+                    try {
+                        await addDoc(ratingsRef, {
+                            userId: userId,
+                            driverId: 'simulated_driver', // AQUI DEVE SER O ID DO MOTORISTA REAL
+                            rating: selectedRating,
+                            timestamp: serverTimestamp()
+                        });
+                        ratingStatus.textContent = 'Avaliação enviada! Obrigado!';
+                        submitRatingButton.disabled = true;
+                        
+                        // Limpa o estado depois de um tempo
+                        setTimeout(() => {
+                            resetRideUI('Aguardando sua próxima solicitação...');
+                        }, 3000);
+
+                    } catch (e) {
+                        console.error("Erro ao enviar avaliação: ", e);
+                        ratingStatus.textContent = 'Erro ao enviar. Tente novamente.';
+                    }
+                }
+            });
+
+
+            // Ação do botão de solicitar corrida (Passageiro)
+            requestButton.addEventListener('click', async () => {
+                const scheduledTime = scheduledTimeInput.value;
+                const currentTime = new Date();
+                const minScheduledTime = new Date(currentTime.getTime() + 15 * 60 * 1000); // 15 minutos no futuro
+
+                if (scheduledTime && new Date(scheduledTime) < minScheduledTime) {
+                    statusMessage.textContent = 'Por favor, agende sua corrida com no mínimo 15 minutos de antecedência.';
+                    statusMessage.classList.add('text-red-500');
+                    return;
+                }
+                statusMessage.classList.remove('text-red-500');
+
+                requestButton.disabled = true;
+                const rideStatus = scheduledTime ? 'scheduled' : 'pending';
+                requestButton.textContent = scheduledTime ? 'Agendando corrida...' : 'Procurando motorista...';
+                cancelButton.classList.remove('hidden');
+
+                if (scheduledTime) {
+                    statusMessage.textContent = `Corrida agendada para ${new Date(scheduledTime).toLocaleString('pt-BR')}!`;
+                } else {
+                    statusMessage.textContent = 'Procurando motorista...';
+                }
+
+                const userLocation = getUserLocation();
+                passengerLocation = userLocation;
+                
+                // Cria uma nova solicitação de corrida no Firestore
+                const newRide = await addDoc(ridesRef, {
+                    passengerId: userId,
+                    passengerName: currentUserData.name,
+                    status: rideStatus,
+                    passengerLat: userLocation.lat,
+                    passengerLng: userLocation.lng,
+                    timestamp: serverTimestamp(),
+                    scheduledTime: scheduledTime ? new Date(scheduledTime).toISOString() : null
+                });
+                currentRideId = newRide.id;
+                
+                if (!scheduledTime) {
+                    // --- NOVO: Simula que o motorista aceitou a corrida imediatamente ---
+                    setTimeout(async () => {
+                         // Simula a localização do motorista
+                        const driverLocation = L.latLng(userLocation.lat + 0.005, userLocation.lng + 0.005);
+                        
+                        await updateDoc(doc(ridesRef, currentRideId), {
+                            status: 'accepted',
+                            driverId: 'simulated_driver',
+                            driverName: 'Motorista Simulado',
+                            driverLat: driverLocation.lat,
+                            driverLng: driverLocation.lng,
+                            acceptedAt: serverTimestamp()
+                        });
+                    }, 1000);
+                    // --------------------------------------------------------------------
+                }
+
+                // Fica "ouvindo" o documento da corrida para atualizações
+                onSnapshot(doc(ridesRef, currentRideId), (snapshot) => {
+                    const rideData = snapshot.data();
+                    if (rideData) {
+                        if (rideData.status === 'accepted') {
+                            statusMessage.textContent = `Corrida aceita por ${rideData.driverName}!`;
+                            toggleChatButton.classList.remove('hidden');
+                            initializeMap();
+                            mapChatContainer.classList.remove('hidden');
+                            initialStateContainer.classList.add('hidden');
+                            setTimeout(() => { if (map) map.invalidateSize(); }, 100);
+                            simulateDriverArrival(doc(ridesRef, currentRideId), L.latLng(rideData.driverLat, rideData.driverLng), L.latLng(rideData.passengerLat, rideData.passengerLng));
+                        } else if (rideData.status === 'cancelled') {
+                            resetRideUI('A corrida foi cancelada. Aguardando nova solicitação...');
+                        } else if (rideData.status === 'completed') {
+                            resetRideUI('Viagem finalizada!');
+                        }
+                    }
+                });
+            });
+
+            // Ação do botão de cancelar (Passageiro)
+            cancelButton.addEventListener('click', async () => {
+                if (currentRideId) {
+                    statusMessage.textContent = 'Cancelando corrida...';
+                    await updateDoc(doc(ridesRef, currentRideId), {
+                        status: 'cancelled',
+                        cancelledBy: userId,
+                        cancellationTimestamp: serverTimestamp()
+                    });
+                    // A UI será resetada pelo onSnapshot
+                }
+            });
+
+            // Ação do botão de procurar corridas (Motorista)
+            findRidesButton.addEventListener('click', () => {
+                findRidesButton.disabled = true;
+                findRidesButton.textContent = 'Aguardando corridas...';
+                statusMessage.textContent = 'Procurando por passageiros...';
+                
+                // Exibe a lista de corridas em vez do mapa
+                mapChatContainer.classList.add('hidden');
+                driverRidesListContainer.classList.remove('hidden');
+
+                const renderRidesList = (rides) => {
+                    ridesList.innerHTML = '';
+                    if (rides.length === 0) {
+                        noRidesMessage.classList.remove('hidden');
+                    } else {
+                        noRidesMessage.classList.add('hidden');
+                        rides.forEach(ride => {
+                            const rideCard = document.createElement('div');
+                            rideCard.className = 'ride-card';
+                            
+                            let timeDisplay = 'Corrida Imediata';
+                            if (ride.scheduledTime) {
+                                const scheduledDate = new Date(ride.scheduledTime);
+                                timeDisplay = `Agendada para: ${scheduledDate.toLocaleDateString('pt-BR')} às ${scheduledDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+                            }
+
+                            rideCard.innerHTML = `
+                                <p class="text-lg font-bold text-gray-800">${ride.passengerName}</p>
+                                <p class="text-sm text-gray-500 mt-1">${timeDisplay}</p>
+                                <button data-ride-id="${ride.id}" class="accept-ride-button mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-full transition-colors duration-300">
+                                    Aceitar Corrida
+                                </button>
+                            `;
+                            ridesList.appendChild(rideCard);
+                        });
+
+                        ridesList.querySelectorAll('.accept-ride-button').forEach(button => {
+                            button.addEventListener('click', async (e) => {
+                                const rideId = e.target.dataset.rideId;
+                                const rideDocRef = doc(ridesRef, rideId);
+                                const rideDoc = await getDoc(rideDocRef);
+                                const rideData = rideDoc.data();
+
+                                // Verifica novamente se a corrida ainda está disponível
+                                if (rideData.status === 'pending' || rideData.status === 'scheduled') {
+                                    // Simula a localização do motorista
+                                    const driverLocation = getUserLocation();
+
+                                    // Atualiza a corrida com os dados do motorista
+                                    await updateDoc(rideDocRef, {
+                                        status: 'accepted',
+                                        driverId: userId,
+                                        driverName: currentUserData.name,
+                                        driverLat: driverLocation.lat,
+                                        driverLng: driverLocation.lng,
+                                        acceptedAt: serverTimestamp()
+                                    });
+
+                                    // Transita para a tela de mapa
+                                    statusMessage.textContent = `Corrida de ${rideData.passengerName} aceita!`;
+                                    mapChatContainer.classList.remove('hidden');
+                                    driverRidesListContainer.classList.add('hidden');
+                                    initializeMap();
+                                    setTimeout(() => { if (map) map.invalidateSize(); }, 100);
+
+                                    // O motorista agora segue a mesma lógica do passageiro para a chegada
+                                    simulateDriverArrival(rideDocRef, driverLocation, L.latLng(rideData.passengerLat, rideData.passengerLng));
+                                } else {
+                                    statusMessage.textContent = 'Essa corrida não está mais disponível.';
+                                    // Re-renderiza a lista para remover a corrida
+                                    updateDriverRidesList();
+                                }
+                            });
+                        });
+                    }
+                };
+
+                const updateDriverRidesList = () => {
+                    const availableRidesQuery = query(ridesRef, where('status', 'in', ['pending', 'scheduled']));
+                    if (onDemandListener) onDemandListener(); // Cancela o listener anterior
+                    onDemandListener = onSnapshot(availableRidesQuery, (snapshot) => {
+                        const rides = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderRidesList(rides);
+                    });
+                };
+                
+                updateDriverRidesList();
+            });
+
+
+            // Ação do botão de alternar para o chat
+            toggleChatButton.addEventListener('click', () => {
+                if (mapContainer.style.display !== 'none') {
+                    mapContainer.style.display = 'none';
+                    chatContainer.style.display = 'flex';
+                    toggleChatButton.textContent = 'Mapa';
+                } else {
+                    mapContainer.style.display = 'flex';
+                    chatContainer.style.display = 'none';
+                    toggleChatButton.textContent = 'Chat';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
