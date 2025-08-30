@@ -91,44 +91,36 @@
         const tipoUsuarioSelect = document.getElementById('tipoUsuario');
         const feedbackMsg = document.getElementById('feedback-msg');
 
-        let isAuthReady = false;
-
-        // Função para inicializar o Firebase
-        function initializeFirebase() {
+        // Função para inicializar o Firebase e autenticar
+        function initializeAndAuthenticate() {
             try {
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                // Autentica o usuário logo no início
-                signIn();
-
-                onAuthStateChanged(auth, (user) => {
+                onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
                         console.log("Usuário autenticado. ID do usuário:", userId);
+                        // Agora que o usuário está pronto, podemos remover a mensagem de espera se houver.
+                        feedbackMsg.textContent = ""; 
                     } else {
-                        console.log("Usuário não autenticado. O processo de login está no início.");
+                        console.log("Usuário não autenticado. Iniciando login anônimo...");
+                        try {
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch (error) {
+                            console.error("Erro na autenticação:", error);
+                            feedbackMsg.textContent = "Erro ao autenticar. Tente recarregar a página.";
+                        }
                     }
-                    isAuthReady = true;
                 });
             } catch (error) {
                 console.error("Erro ao inicializar Firebase:", error);
                 feedbackMsg.textContent = "Erro ao conectar com o serviço. Tente recarregar a página.";
-            }
-        }
-
-        // Função para autenticar o usuário
-        async function signIn() {
-            try {
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Erro na autenticação:", error);
-                feedbackMsg.textContent = "Erro ao autenticar. Tente recarregar a página.";
             }
         }
 
@@ -146,28 +138,27 @@
             try {
                 cadastrarBtn.textContent = 'Carregando...';
                 cadastrarBtn.disabled = true;
-
-                // Garante que o usuário está autenticado antes de salvar os dados
-                if (!isAuthReady || !auth.currentUser) {
-                    throw new Error("Usuário não autenticado. Por favor, espere a autenticação ser concluída.");
+                
+                // Espera a autenticação ser concluída
+                if (!auth.currentUser) {
+                    feedbackMsg.textContent = "Esperando autenticação. Tente novamente em instantes.";
+                    console.log("Aguardando autenticação do usuário...");
+                    return;
                 }
-
-                if (auth.currentUser) {
-                    const currentUserId = auth.currentUser.uid;
-                    const userRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'users', currentUserId);
-                    
-                    const userData = {
-                        nome,
-                        tipo: tipoUsuario,
-                        createdAt: new Date(),
-                        last_location: null,
-                    };
-                    
-                    await setDoc(userRef, userData, { merge: true });
-                    console.log("Usuário cadastrado com sucesso!");
-                    feedbackMsg.textContent = "Cadastro concluído! Olhe o console para a confirmação.";
-                    
-                }
+                
+                const currentUserId = auth.currentUser.uid;
+                const userRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'users', currentUserId);
+                
+                const userData = {
+                    nome,
+                    tipo: tipoUsuario,
+                    createdAt: new Date(),
+                    last_location: null,
+                };
+                
+                await setDoc(userRef, userData, { merge: true });
+                console.log("Usuário cadastrado com sucesso!");
+                feedbackMsg.textContent = "Cadastro concluído! Olhe o console para a confirmação.";
                 
             } catch (error) {
                 console.error("Erro ao cadastrar usuário:", error);
@@ -180,7 +171,7 @@
 
         // Event Listeners
         window.onload = () => {
-            initializeFirebase();
+            initializeAndAuthenticate();
         };
 
         cadastrarBtn.addEventListener('click', cadastrarUsuario);
