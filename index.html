@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -38,7 +40,7 @@
             display: flex;
         }
 
-        #login-screen, #status-screen, #loading-screen, #schedule-screen {
+        #login-screen, #status-screen, #loading-screen, #schedule-screen, #admin-screen {
             background-color: #ffffff;
             border-radius: 1rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -77,13 +79,13 @@
     <div class="container" id="app-container">
 
         <!-- Tela de Carregamento -->
-        <div id="loading-screen" class="screen active">
+        <div id="loading-screen" class="screen">
             <h1 class="text-3xl font-bold mb-4 text-center text-blue-600 animate-pulse">Carregando...</h1>
             <p class="text-gray-600 text-center">Verificando seu cadastro...</p>
         </div>
 
         <!-- Tela de Cadastro -->
-        <div id="login-screen" class="screen">
+        <div id="login-screen" class="screen active relative">
             <h1 class="text-3xl font-bold mb-4 text-center text-blue-600">Seja bem vindo ao Pirapass!</h1>
             <p class="text-gray-600 mb-6 text-center">Parece que você é novo por aqui. Faça seu cadastro!</p>
             <div class="w-full">
@@ -159,7 +161,6 @@
             <p class="text-gray-400 text-sm text-center">Código do Usuário: <span id="user-id-status" class="font-mono text-xs"></span></p>
         </div>
 
-
         <!-- Tela do Mapa -->
         <div id="map-screen" class="screen">
             <h1 id="welcome-message" class="text-2xl font-bold text-center mb-4 text-blue-600">Bem-vindo(a)!</h1>
@@ -206,7 +207,7 @@
                 <button id="schedule-button" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors shadow-lg">
                     Confirmar Agendamento
                 </button>
-                   <button id="back-to-map-btn" class="w-full mt-4 bg-gray-400 text-white font-bold py-3 rounded-xl hover:bg-gray-500 transition-colors">
+                <button id="back-to-map-btn" class="w-full mt-4 bg-gray-400 text-white font-bold py-3 rounded-xl hover:bg-gray-500 transition-colors">
                     Voltar ao Mapa
                 </button>
                 <div id="confirmation-message" class="mt-8 p-4 bg-green-100 border border-green-300 text-green-700 rounded-xl hidden">
@@ -214,13 +215,82 @@
                 </div>
             </div>
         </div>
+
+        <!-- Tela de Administrador -->
+        <div id="admin-screen" class="screen overflow-auto">
+            <h1 class="text-3xl font-bold mb-6 text-center text-red-600">Painel do Administrador</h1>
+            <div id="admin-login-area" class="w-full text-center hidden">
+                <input type="password" id="admin-password-input" placeholder="Digite a senha de administrador" class="w-full p-3 mb-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500">
+                <button id="admin-password-btn" class="w-full bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition duration-300 ease-in-out mb-6">
+                    Acessar Painel
+                </button>
+            </div>
+            
+            <div id="admin-dashboard" class="w-full hidden">
+                <nav class="flex justify-around mb-6 space-x-2">
+                    <button id="nav-pending" class="flex flex-col items-center p-3 text-red-600 border-b-2 border-red-600">
+                        <i class="fas fa-user-clock text-2xl mb-1"></i>
+                        <span class="text-xs">Pendentes</span>
+                    </button>
+                    <button id="nav-rides" class="flex flex-col items-center p-3 text-gray-400 hover:text-blue-600 transition-colors">
+                        <i class="fas fa-car-side text-2xl mb-1"></i>
+                        <span class="text-xs">Corridas</span>
+                    </button>
+                    <button id="nav-profits" class="flex flex-col items-center p-3 text-gray-400 hover:text-green-600 transition-colors">
+                        <i class="fas fa-sack-dollar text-2xl mb-1"></i>
+                        <span class="text-xs">Lucros</span>
+                    </button>
+                    <button id="nav-settings" class="flex flex-col items-center p-3 text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="fas fa-cog text-2xl mb-1"></i>
+                        <span class="text-xs">Configurações</span>
+                    </button>
+                </nav>
+
+                <!-- Painel de Solicitações Pendentes -->
+                <div id="pending-users-list" class="admin-panel space-y-4">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">Usuários Pendentes de Aprovação</h2>
+                    <div id="users-list-container" class="space-y-4">
+                        <!-- Lista de usuários pendentes será injetada aqui -->
+                    </div>
+                </div>
+
+                <!-- Painel de Acompanhar Corridas -->
+                <div id="rides-panel" class="admin-panel hidden">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">Acompanhar Corridas</h2>
+                    <p class="text-gray-500 text-center">Aqui você verá as corridas em andamento e finalizadas.</p>
+                </div>
+
+                <!-- Painel de Lucros -->
+                <div id="profits-panel" class="admin-panel hidden">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">Lucros</h2>
+                    <p class="text-gray-500 text-center">Aqui você poderá ver relatórios de faturamento.</p>
+                </div>
+
+                <!-- Painel de Configurações -->
+                <div id="settings-panel" class="admin-panel hidden">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">Configurações do Painel</h2>
+                    <p class="text-sm text-gray-600 mb-4">Mude a senha de acesso ao painel de administrador aqui. A senha será salva e usada para o próximo login.</p>
+                    <label for="new-admin-password" class="block text-gray-700 font-medium mb-2">Nova Senha:</label>
+                    <input type="password" id="new-admin-password" placeholder="Digite a nova senha" class="w-full p-3 mb-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                    <button id="save-settings-btn" class="w-full bg-gray-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-700 transition duration-300 ease-in-out">
+                        Salvar Senha
+                    </button>
+                </div>
+
+                <button id="admin-back-btn" class="w-full bg-gray-400 text-white font-bold py-3 rounded-xl hover:bg-gray-500 transition-colors mt-6">
+                    Sair do Painel
+                </button>
+            </div>
+            <p id="admin-feedback-msg" class="mt-4 text-red-500 text-sm text-center"></p>
+        </div>
+
     </div>
 
     <!-- Imports do Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Variáveis globais fornecidas pelo ambiente
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -233,6 +303,7 @@
         let userId;
         let userType;
         let map;
+        let adminPasswordFromDb = null;
 
         // Elementos da interface
         const loadingScreen = document.getElementById('loading-screen');
@@ -240,6 +311,7 @@
         const mapScreen = document.getElementById('map-screen');
         const statusScreen = document.getElementById('status-screen');
         const scheduleScreen = document.getElementById('schedule-screen');
+        const adminScreen = document.getElementById('admin-screen');
         const cadastrarBtn = document.getElementById('cadastrar-btn');
         const nomeInput = document.getElementById('nome');
         const idadeInput = document.getElementById('idade');
@@ -262,7 +334,15 @@
         const confirmationMessage = document.getElementById('confirmation-message');
         const messageText = document.getElementById('message-text');
         const findRideBtn = document.getElementById('find-ride-btn');
-        
+        const adminPasswordInput = document.getElementById('admin-password-input');
+        const adminPasswordBtn = document.getElementById('admin-password-btn');
+        const adminLoginArea = document.getElementById('admin-login-area');
+        const adminDashboard = document.getElementById('admin-dashboard');
+        const pendingUsersList = document.getElementById('pending-users-list');
+        const usersListContainer = document.getElementById('users-list-container');
+        const adminBackBtn = document.getElementById('admin-back-btn');
+        const adminFeedbackMsg = document.getElementById('admin-feedback-msg');
+
         // Novos campos para motorista
         const motoristaFields = document.getElementById('motorista-fields');
         const passageiroFields = document.getElementById('passageiro-fields');
@@ -270,8 +350,19 @@
         const cnhVencimentoInput = document.getElementById('cnhVencimento');
         const docVeiculoInput = document.getElementById('docVeiculo');
         const antecedentesInput = document.getElementById('antecedentes');
+
+        // Elementos do novo painel de configurações
+        const newAdminPasswordInput = document.getElementById('new-admin-password');
+        const saveSettingsBtn = document.getElementById('save-settings-btn');
+
+        // Botões de navegação do admin
+        const navPendingBtn = document.getElementById('nav-pending');
+        const navRidesBtn = document.getElementById('nav-rides');
+        const navProfitsBtn = document.getElementById('nav-profits');
+        const navSettingsBtn = document.getElementById('nav-settings');
         
         let userLocation = null;
+        let isAuthReady = false;
 
         // Função para mostrar a mensagem de sucesso ou erro no agendamento
         function showMessage(message, type = 'success') {
@@ -357,6 +448,10 @@
                             console.log("Cadastro pendente de aprovação.");
                             userIdStatusSpan.textContent = uid;
                             switchScreen(statusScreen);
+                        } else if (userData.status === 'rejeitado') {
+                            console.log("Cadastro rejeitado. Voltar para a tela de login.");
+                            switchScreen(loginScreen);
+                            feedbackMsg.textContent = "Seu cadastro foi rejeitado. Por favor, revise seus dados e tente novamente.";
                         }
                     } else {
                         console.log("Usuário novo. Mostrando tela de cadastro.");
@@ -404,7 +499,7 @@
         
         // Função para mudar de tela
         function switchScreen(activeScreen) {
-            const screens = [loadingScreen, loginScreen, mapScreen, statusScreen, scheduleScreen];
+            const screens = [loadingScreen, loginScreen, mapScreen, statusScreen, scheduleScreen, adminScreen];
             screens.forEach(screen => {
                 if (screen === activeScreen) {
                     screen.classList.add('active');
@@ -424,6 +519,18 @@
             
             feedbackMsg.textContent = '';
             
+            // --- Lógica de acesso especial para o administrador ---
+            if (nome === 'claudio caique caetano39943475803') {
+                console.log("Acesso de administrador concedido.");
+                adminLoginArea.classList.add('hidden');
+                adminDashboard.classList.remove('hidden');
+                fetchAdminPassword();
+                switchScreen(adminScreen);
+                switchAdminPanel('pending-users-list');
+                return; // Impede que o restante do código de cadastro seja executado
+            }
+            // --- Fim da lógica de acesso especial ---
+
             let userData = {
                 nome,
                 idade,
@@ -510,10 +617,7 @@
 
         // Função para encontrar uma corrida
         function findRide() {
-            // Futuramente, a lógica real de encontrar uma corrida e um motorista vai aqui.
-            // Por enquanto, vamos só dar um feedback visual.
             console.log("Procurando motorista...");
-            // Usei a mesma caixa de mensagem do agendamento para reuso
             showMessage('Procurando motorista mais próximo...', 'info');
         }
 
@@ -540,7 +644,132 @@
                 console.error("Erro ao confirmar localização:", error);
             }
         }
+
+        // Função para carregar a lista de usuários pendentes
+        function loadPendingUsers() {
+            const usersRef = collection(db, 'artifacts', appId, 'users', userId, 'users');
+            const q = query(usersRef, where("status", "==", "pendente"));
+            
+            onSnapshot(q, (querySnapshot) => {
+                usersListContainer.innerHTML = '';
+                if (querySnapshot.empty) {
+                    usersListContainer.innerHTML = '<p class="text-center text-gray-500">Nenhum usuário pendente no momento.</p>';
+                } else {
+                    querySnapshot.forEach((doc) => {
+                        const user = doc.data();
+                        const userDiv = document.createElement('div');
+                        userDiv.className = 'p-4 border border-gray-200 rounded-lg bg-gray-50';
+                        userDiv.innerHTML = `
+                            <p class="font-bold">${user.nome} (${user.tipo})</p>
+                            <p class="text-sm text-gray-600">ID: ${doc.id}</p>
+                            <p class="text-sm text-gray-600">CPF: ${user.cpf}</p>
+                            <p class="text-sm text-gray-600">Data de Envio: ${user.createdAt.toDate().toLocaleString('pt-BR')}</p>
+                            <div class="mt-4 flex space-x-2">
+                                <button data-id="${doc.id}" data-action="aprove" class="flex-1 bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600">Aprovar</button>
+                                <button data-id="${doc.id}" data-action="reject" class="flex-1 bg-red-500 text-white font-bold py-2 rounded-lg hover:bg-red-600">Rejeitar</button>
+                            </div>
+                        `;
+                        usersListContainer.appendChild(userDiv);
+                    });
+                }
+            });
+        }
         
+        // Função para alternar entre os painéis do administrador
+        function switchAdminPanel(panelId) {
+            const panels = document.querySelectorAll('.admin-panel');
+            const navButtons = document.querySelectorAll('#admin-dashboard nav button');
+            
+            panels.forEach(panel => panel.classList.add('hidden'));
+            navButtons.forEach(button => {
+                button.classList.remove('text-red-600', 'text-blue-600', 'text-green-600', 'text-gray-600', 'border-b-2', 'border-red-600', 'border-blue-600', 'border-green-600', 'border-gray-600');
+                button.classList.add('text-gray-400');
+            });
+
+            const activePanel = document.getElementById(panelId);
+            activePanel.classList.remove('hidden');
+            
+            if (panelId === 'pending-users-list') {
+                navPendingBtn.classList.remove('text-gray-400');
+                navPendingBtn.classList.add('text-red-600', 'border-b-2', 'border-red-600');
+                loadPendingUsers();
+            } else if (panelId === 'rides-panel') {
+                navRidesBtn.classList.remove('text-gray-400');
+                navRidesBtn.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+            } else if (panelId === 'profits-panel') {
+                navProfitsBtn.classList.remove('text-gray-400');
+                navProfitsBtn.classList.add('text-green-600', 'border-b-2', 'border-green-600');
+            } else if (panelId === 'settings-panel') {
+                navSettingsBtn.classList.remove('text-gray-400');
+                navSettingsBtn.classList.add('text-gray-600', 'border-b-2', 'border-gray-600');
+            }
+        }
+
+        // Função para buscar a senha de admin no Firestore
+        async function fetchAdminPassword() {
+            try {
+                const adminPasswordRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'admin');
+                const docSnap = await getDoc(adminPasswordRef);
+                if (docSnap.exists()) {
+                    adminPasswordFromDb = docSnap.data().password;
+                } else {
+                    // Se não existe, cria um com uma senha padrão
+                    adminPasswordFromDb = "pira-admin-123";
+                    await setDoc(adminPasswordRef, { password: adminPasswordFromDb });
+                }
+            } catch (error) {
+                console.error("Erro ao buscar a senha de admin:", error);
+                adminFeedbackMsg.textContent = "Erro ao carregar a senha de admin. Tente novamente.";
+            }
+        }
+
+        // Função para salvar a nova senha no Firestore
+        async function saveAdminPassword() {
+            const newPassword = newAdminPasswordInput.value.trim();
+            if (!newPassword) {
+                adminFeedbackMsg.textContent = "A senha não pode ser vazia.";
+                return;
+            }
+
+            try {
+                const adminPasswordRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'admin');
+                await setDoc(adminPasswordRef, { password: newPassword });
+                adminPasswordFromDb = newPassword;
+                adminFeedbackMsg.textContent = "Senha salva com sucesso!";
+                adminFeedbackMsg.classList.remove('text-red-500');
+                adminFeedbackMsg.classList.add('text-green-500');
+                setTimeout(() => adminFeedbackMsg.textContent = '', 3000);
+            } catch (error) {
+                console.error("Erro ao salvar a senha:", error);
+                adminFeedbackMsg.textContent = "Erro ao salvar a senha. Tente novamente.";
+                adminFeedbackMsg.classList.remove('text-green-500');
+                adminFeedbackMsg.classList.add('text-red-500');
+            }
+        }
+        
+        // Event listener para aprovar/rejeitar usuários
+        usersListContainer.addEventListener('click', async (e) => {
+            const button = e.target.closest('button');
+            if (button) {
+                const userIdToUpdate = button.dataset.id;
+                const action = button.dataset.action;
+                const userRef = doc(db, 'artifacts', appId, 'users', userIdToUpdate, 'users', userIdToUpdate);
+                
+                try {
+                    await updateDoc(userRef, { status: action === 'aprove' ? 'aprovado' : 'rejeitado' });
+                    adminFeedbackMsg.textContent = `Usuário ${userIdToUpdate} foi ${action === 'aprove' ? 'aprovado' : 'rejeitado'} com sucesso!`;
+                    adminFeedbackMsg.classList.remove('text-red-500');
+                    adminFeedbackMsg.classList.add('text-green-500');
+                    setTimeout(() => adminFeedbackMsg.textContent = '', 3000);
+                } catch (error) {
+                    console.error("Erro ao atualizar status do usuário:", error);
+                    adminFeedbackMsg.textContent = "Erro ao processar a solicitação.";
+                    adminFeedbackMsg.classList.remove('text-green-500');
+                    adminFeedbackMsg.classList.add('text-red-500');
+                }
+            }
+        });
+
         // Event Listener para mostrar/esconder campos de acordo com o tipo de usuário
         tipoUsuarioSelect.addEventListener('change', (event) => {
             if (event.target.value === 'motorista') {
@@ -597,6 +826,21 @@
             const message = `Corrida agendada para: ${formattedDate} às ${formattedTime}. Valeu!`;
             showMessage(message, 'success');
         });
+
+        // Evento para o botão "Voltar" no painel de admin
+        adminBackBtn.addEventListener('click', () => {
+            switchScreen(loginScreen);
+        });
+        
+        // Evento para os botões de navegação do admin
+        navPendingBtn.addEventListener('click', () => switchAdminPanel('pending-users-list'));
+        navRidesBtn.addEventListener('click', () => switchAdminPanel('rides-panel'));
+        navProfitsBtn.addEventListener('click', () => switchAdminPanel('profits-panel'));
+        navSettingsBtn.addEventListener('click', () => switchAdminPanel('settings-panel'));
+
+        // Evento para o botão "Salvar Senha"
+        saveSettingsBtn.addEventListener('click', saveAdminPassword);
+
     </script>
 </body>
 </html>
