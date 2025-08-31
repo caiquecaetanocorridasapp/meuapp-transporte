@@ -206,7 +206,7 @@
                 <button id="schedule-button" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors shadow-lg">
                     Confirmar Agendamento
                 </button>
-                 <button id="back-to-map-btn" class="w-full mt-4 bg-gray-400 text-white font-bold py-3 rounded-xl hover:bg-gray-500 transition-colors">
+                   <button id="back-to-map-btn" class="w-full mt-4 bg-gray-400 text-white font-bold py-3 rounded-xl hover:bg-gray-500 transition-colors">
                     Voltar ao Mapa
                 </button>
                 <div id="confirmation-message" class="mt-8 p-4 bg-green-100 border border-green-300 text-green-700 rounded-xl hidden">
@@ -220,7 +220,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Variáveis globais fornecidas pelo ambiente
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -261,6 +261,7 @@
         const timePicker = document.getElementById('time-picker');
         const confirmationMessage = document.getElementById('confirmation-message');
         const messageText = document.getElementById('message-text');
+        const findRideBtn = document.getElementById('find-ride-btn');
         
         // Novos campos para motorista
         const motoristaFields = document.getElementById('motorista-fields');
@@ -300,7 +301,7 @@
                     if (user) {
                         userId = user.uid;
                         console.log("Usuário autenticado. ID do usuário:", userId);
-                        await checkUserStatus(userId);
+                        checkUserStatus(userId);
                     } else {
                         console.log("Usuário não autenticado. Iniciando login anônimo...");
                         try {
@@ -322,50 +323,51 @@
             }
         }
 
-        // Função para verificar o status do cadastro do usuário
-        async function checkUserStatus(uid) {
+        // Função para verificar o status do cadastro do usuário em tempo real
+        function checkUserStatus(uid) {
             const userDocRef = doc(db, 'artifacts', appId, 'users', uid, 'users', uid);
-            try {
-                const userDocSnap = await getDoc(userDocRef);
-                if (userDocSnap.exists()) {
-                    const userData = userDocSnap.data();
-                    if (userData.status === 'aprovado') {
-                        console.log("Usuário já cadastrado e aprovado.");
-                        welcomeMessage.textContent = `Bem-vindo(a), ${userData.nome}!`;
-                        switchScreen(mapScreen);
-                        if ("geolocation" in navigator) {
-                             navigator.geolocation.getCurrentPosition(
-                                 (position) => {
-                                     const { latitude, longitude } = position.coords;
-                                     initializeMap(latitude, longitude);
-                                     userLocation = { lat: latitude, lon: longitude };
-                                     fetchAddress(latitude, longitude);
-                                     locationConfirmBox.classList.remove('hidden');
-                                 },
-                                 (error) => {
-                                     console.error("Erro ao obter localização:", error);
-                                     initializeMap(-23.55052, -46.633308);
-                                     locationConfirmBox.classList.add('hidden');
-                                 }
-                            );
-                        } else {
-                            initializeMap(-23.55052, -46.633308);
-                            locationConfirmBox.classList.add('hidden');
+            onSnapshot(userDocRef, (docSnap) => {
+                try {
+                    if (docSnap.exists()) {
+                        const userData = docSnap.data();
+                        if (userData.status === 'aprovado') {
+                            console.log("Usuário já cadastrado e aprovado.");
+                            welcomeMessage.textContent = `Bem-vindo(a), ${userData.nome}!`;
+                            switchScreen(mapScreen);
+                            if ("geolocation" in navigator) {
+                                navigator.geolocation.getCurrentPosition(
+                                    (position) => {
+                                        const { latitude, longitude } = position.coords;
+                                        initializeMap(latitude, longitude);
+                                        userLocation = { lat: latitude, lon: longitude };
+                                        fetchAddress(latitude, longitude);
+                                        locationConfirmBox.classList.remove('hidden');
+                                    },
+                                    (error) => {
+                                        console.error("Erro ao obter localização:", error);
+                                        initializeMap(-23.55052, -46.633308);
+                                        locationConfirmBox.classList.add('hidden');
+                                    }
+                                );
+                            } else {
+                                initializeMap(-23.55052, -46.633308);
+                                locationConfirmBox.classList.add('hidden');
+                            }
+                        } else if (userData.status === 'pendente') {
+                            console.log("Cadastro pendente de aprovação.");
+                            userIdStatusSpan.textContent = uid;
+                            switchScreen(statusScreen);
                         }
-                    } else if (userData.status === 'pendente') {
-                        console.log("Cadastro pendente de aprovação.");
-                        userIdStatusSpan.textContent = uid;
-                        switchScreen(statusScreen);
+                    } else {
+                        console.log("Usuário novo. Mostrando tela de cadastro.");
+                        switchScreen(loginScreen);
                     }
-                } else {
-                    console.log("Usuário novo. Mostrando tela de cadastro.");
+                } catch (error) {
+                    console.error("Erro ao buscar dados do usuário:", error);
+                    feedbackMsg.textContent = "Erro ao carregar seu status. Tente novamente.";
                     switchScreen(loginScreen);
                 }
-            } catch (error) {
-                console.error("Erro ao buscar dados do usuário:", error);
-                feedbackMsg.textContent = "Erro ao carregar seu status. Tente novamente.";
-                switchScreen(loginScreen);
-            }
+            });
         }
 
         // Função para inicializar o mapa
@@ -506,6 +508,15 @@
             }
         }
 
+        // Função para encontrar uma corrida
+        function findRide() {
+            // Futuramente, a lógica real de encontrar uma corrida e um motorista vai aqui.
+            // Por enquanto, vamos só dar um feedback visual.
+            console.log("Procurando motorista...");
+            // Usei a mesma caixa de mensagem do agendamento para reuso
+            showMessage('Procurando motorista mais próximo...', 'info');
+        }
+
         // Função para confirmar a localização
         async function confirmLocation() {
             if (!userLocation) {
@@ -558,6 +569,9 @@
         backToMapBtn.addEventListener('click', () => {
             switchScreen(mapScreen);
         });
+        
+        // Evento para o botão "Encontrar Motorista"
+        findRideBtn.addEventListener('click', findRide);
         
         // Evento para o botão "Confirmar Agendamento"
         scheduleButton.addEventListener('click', () => {
