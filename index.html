@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplicativo de Viagem - Pirapass</title>
+    <title>Aplicativo de Viagem - PiraPass</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -96,7 +96,6 @@
                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
             </div>
 
-            <!-- Botão especial para acesso admin, que será exibido via JS -->
             <div id="admin-access" class="hidden">
                 <p class="text-sm text-center text-gray-500 mb-2">Acesso de Administrador detectado.</p>
                 <button id="admin-login-btn" type="button" class="w-full bg-indigo-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-indigo-700 transition-transform transform hover:scale-105">
@@ -170,7 +169,20 @@
         <p id="message-text"></p>
     </div>
     
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, getDoc, setDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Variáveis globais de ambiente (não altere)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db;
+        let auth;
+        let userId;
+
         // Referências para os elementos da tela
         const welcomeScreen = document.getElementById('welcome-screen');
         const choiceScreen = document.getElementById('choice-screen');
@@ -198,9 +210,35 @@
         const confirmationMessage = document.getElementById('confirmation-message');
         const messageText = document.getElementById('message-text');
 
-        // Array para simular os pedidos de corrida e solicitações de usuário
-        const tripRequests = [];
-        const pendingUsers = [];
+        let lastSnapshotSize = 0; // Para rastrear novos pedidos e emitir o alerta
+
+        // Inicializa o Firebase e autentica o usuário
+        window.onload = async function() {
+            try {
+                // Apenas inicializa o app se a config for válida
+                if (Object.keys(firebaseConfig).length > 0) {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    setLogLevel('debug'); // Ativa logs de depuração para o Firestore
+
+                    // Autentica o usuário com o token fornecido ou anonimamente
+                    if (initialAuthToken) {
+                        const userCredential = await signInWithCustomToken(auth, initialAuthToken);
+                        userId = userCredential.user.uid;
+                        console.log("Usuário autenticado:", userId);
+                    } else {
+                        const userCredential = await signInAnonymously(auth);
+                        userId = userCredential.user.uid;
+                        console.log("Usuário anônimo autenticado:", userId);
+                    }
+                } else {
+                    console.error("Configuração do Firebase não encontrada. O aplicativo não terá persistência de dados.");
+                }
+            } catch (e) {
+                console.error("Erro ao inicializar o Firebase ou autenticar:", e);
+            }
+        };
 
         // Função para mostrar uma mensagem de feedback
         function showMessage(message, type = 'success') {
@@ -220,13 +258,13 @@
         }
 
         // Função para renderizar os pedidos na tela do motorista
-        function renderTripRequests() {
+        function renderTripRequests(requests) {
             requestsList.innerHTML = '';
             
-            if (tripRequests.length === 0) {
+            if (requests.length === 0) {
                 requestsList.innerHTML = '<p id="no-requests-message" class="text-gray-500 text-center">Nenhum pedido de corrida agendado no momento.</p>';
             } else {
-                tripRequests.forEach((request, index) => {
+                requests.forEach((request) => {
                     const requestCard = document.createElement('div');
                     requestCard.className = 'bg-gray-100 rounded-lg p-4 shadow-md';
                     requestCard.innerHTML = `
@@ -236,8 +274,8 @@
                         <p class="font-bold text-gray-800">Data: <span class="font-normal">${request.date}</span></p>
                         <p class="font-bold text-gray-800">Hora: <span class="font-normal">${request.time}</span></p>
                         <div class="mt-4 flex space-x-2">
-                            <button class="accept-btn bg-green-500 text-white font-bold py-2 px-4 rounded-full hover:bg-green-600 transition-colors" data-index="${index}">Aceitar</button>
-                            <button class="decline-btn bg-red-500 text-white font-bold py-2 px-4 rounded-full hover:bg-red-600 transition-colors" data-index="${index}">Recusar</button>
+                            <button class="accept-btn bg-green-500 text-white font-bold py-2 px-4 rounded-full hover:bg-green-600 transition-colors" data-id="${request.id}">Aceitar</button>
+                            <button class="decline-btn bg-red-500 text-white font-bold py-2 px-4 rounded-full hover:bg-red-600 transition-colors" data-id="${request.id}">Recusar</button>
                         </div>
                     `;
                     requestsList.appendChild(requestCard);
@@ -245,63 +283,57 @@
 
                 // Adicionar listeners para os botões "Aceitar" e "Recusar"
                 document.querySelectorAll('.accept-btn').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const index = e.target.getAttribute('data-index');
-                        const acceptedRequest = tripRequests.splice(index, 1);
+                    button.addEventListener('click', async (e) => {
+                        const requestId = e.target.getAttribute('data-id');
+                        await deleteDoc(doc(db, `artifacts/${appId}/public/data/trip-requests`, requestId));
                         showMessage('Você aceitou a corrida!', 'success');
-                        console.log('Corrida aceita:', acceptedRequest);
-                        renderTripRequests();
                     });
                 });
 
                 document.querySelectorAll('.decline-btn').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const index = e.target.getAttribute('data-index');
-                        const declinedRequest = tripRequests.splice(index, 1);
+                    button.addEventListener('click', async (e) => {
+                        const requestId = e.target.getAttribute('data-id');
+                        await deleteDoc(doc(db, `artifacts/${appId}/public/data/trip-requests`, requestId));
                         showMessage('Você recusou a corrida.', 'error');
-                        console.log('Corrida recusada:', declinedRequest);
-                        renderTripRequests();
                     });
                 });
             }
         }
         
         // Função para renderizar as solicitações na tela do administrador
-        function renderAdminDashboard() {
+        function renderAdminDashboard(users) {
             adminRequestsList.innerHTML = '';
             
-            if (pendingUsers.length === 0) {
+            if (users.length === 0) {
                 adminRequestsList.innerHTML = '<p id="no-admin-requests-message" class="text-gray-500 text-center">Nenhuma solicitação de usuário pendente.</p>';
             } else {
-                pendingUsers.forEach((user, index) => {
+                users.forEach((user) => {
                     const userCard = document.createElement('div');
                     userCard.className = 'bg-gray-100 rounded-lg p-4 shadow-md';
                     userCard.innerHTML = `
                         <p class="font-bold text-gray-800">Nome: <span class="font-normal">${user.name}</span></p>
                         <p class="font-bold text-gray-800">Tipo: <span class="font-normal">${user.type}</span></p>
                         <div class="mt-4 flex space-x-2">
-                            <button class="approve-btn bg-green-500 text-white font-bold py-2 px-4 rounded-full hover:bg-green-600 transition-colors" data-index="${index}">Aprovar</button>
-                            <button class="reject-btn bg-red-500 text-white font-bold py-2 px-4 rounded-full hover:bg-red-600 transition-colors" data-index="${index}">Rejeitar</button>
+                            <button class="approve-btn bg-green-500 text-white font-bold py-2 px-4 rounded-full hover:bg-green-600 transition-colors" data-id="${user.id}">Aprovar</button>
+                            <button class="reject-btn bg-red-500 text-white font-bold py-2 px-4 rounded-full hover:bg-red-600 transition-colors" data-id="${user.id}">Rejeitar</button>
                         </div>
                     `;
                     adminRequestsList.appendChild(userCard);
                 });
 
                 document.querySelectorAll('.approve-btn').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const index = e.target.getAttribute('data-index');
-                        const approvedUser = pendingUsers.splice(index, 1);
-                        showMessage(`Usuário ${approvedUser[0].name} aprovado!`, 'success');
-                        renderAdminDashboard();
+                    button.addEventListener('click', async (e) => {
+                        const userId = e.target.getAttribute('data-id');
+                        await deleteDoc(doc(db, `artifacts/${appId}/public/data/pending-users`, userId));
+                        showMessage(`Usuário aprovado!`, 'success');
                     });
                 });
 
                 document.querySelectorAll('.reject-btn').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const index = e.target.getAttribute('data-index');
-                        const rejectedUser = pendingUsers.splice(index, 1);
-                        showMessage(`Usuário ${rejectedUser[0].name} rejeitado.`, 'error');
-                        renderAdminDashboard();
+                    button.addEventListener('click', async (e) => {
+                        const userId = e.target.getAttribute('data-id');
+                        await deleteDoc(doc(db, `artifacts/${appId}/public/data/pending-users`, userId));
+                        showMessage(`Usuário rejeitado.`, 'error');
                     });
                 });
             }
@@ -315,7 +347,21 @@
         // Listener para o botão "Eu sou motorista"
         motoristaBtn.addEventListener('click', () => {
             switchScreen(driverDashboard, choiceScreen);
-            renderTripRequests(); // Atualiza a lista de pedidos quando a tela é ativada
+            // Configura o listener do Firestore para os pedidos de corrida
+            if (db) {
+                const q = collection(db, `artifacts/${appId}/public/data/trip-requests`);
+                onSnapshot(q, (snapshot) => {
+                    const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderTripRequests(requests);
+                    // Emite um alerta apenas se o número de documentos aumentar
+                    if (requests.length > lastSnapshotSize) {
+                        if (lastSnapshotSize > 0) { // Não avisa no primeiro carregamento
+                           showMessage('🚨 Novo pedido de corrida!', 'success');
+                        }
+                    }
+                    lastSnapshotSize = requests.length;
+                });
+            }
         });
         
         // Listener para o botão "Eu sou passageiro"
@@ -337,7 +383,7 @@
         });
 
         // Listener de evento para o envio do formulário de passageiro
-        passengerForm.addEventListener('submit', (e) => {
+        passengerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const passengerName = passengerNameInput.value;
             const date = document.getElementById('trip-date').value;
@@ -345,18 +391,28 @@
             const location = document.getElementById('trip-location').value;
             const destination = document.getElementById('trip-destination').value;
 
-            // Esta é a parte que agora tem o atalho
+            // Acesso admin
             if (passengerName === 'caiquecaetano') {
                 switchScreen(adminDashboard, passengerDashboard);
-                renderAdminDashboard();
+                if (db) {
+                    const q = collection(db, `artifacts/${appId}/public/data/pending-users`);
+                    onSnapshot(q, (snapshot) => {
+                        const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderAdminDashboard(users);
+                    });
+                }
                 return;
             }
 
-            const newRequest = { name: passengerName, date, time, location, destination, status: 'pending' };
-            tripRequests.push(newRequest);
-            
-            console.log("Pedido de corrida enviado:", newRequest);
-            showMessage("Sua corrida foi solicitada com sucesso!", 'success');
+            // Salva o pedido no Firestore
+            if (db) {
+                const requestRef = collection(db, `artifacts/${appId}/public/data/trip-requests`);
+                const newRequest = { name: passengerName, date, time, location, destination, userId, timestamp: new Date() };
+                await addDoc(requestRef, newRequest);
+                showMessage("Sua corrida foi solicitada com sucesso!", 'success');
+            } else {
+                 showMessage("Erro: Sem conexão com o banco de dados.", 'error');
+            }
             
             setTimeout(() => {
                 switchScreen(choiceScreen, passengerDashboard);
@@ -377,7 +433,13 @@
         // Listener para o novo botão de login admin
         adminLoginBtn.addEventListener('click', () => {
             switchScreen(adminDashboard, passengerDashboard);
-            renderAdminDashboard();
+            if (db) {
+                const q = collection(db, `artifacts/${appId}/public/data/pending-users`);
+                onSnapshot(q, (snapshot) => {
+                    const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderAdminDashboard(users);
+                });
+            }
         });
     </script>
 
