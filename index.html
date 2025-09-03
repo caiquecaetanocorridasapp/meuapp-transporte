@@ -9,7 +9,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
         }
         .screen {
             display: none;
@@ -19,7 +18,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 text-black min-h-screen p-4">
+<body class="bg-white text-black min-h-screen p-4">
 
     <!-- Navegação Principal entre as telas -->
     <div class="fixed top-4 left-1/2 -translate-x-1/2 bg-orange-500 rounded-full shadow-lg p-2 flex items-center justify-center space-x-2 z-50">
@@ -44,38 +43,20 @@
         </div>
     </div>
 
-    <!-- Tela de Login Cliente -->
-    <div id="login-cliente-screen" class="screen flex-col items-center justify-center min-h-screen">
+    <!-- Tela de Login (simulada) -->
+    <div id="login-screen" class="screen flex-col items-center justify-center min-h-screen">
         <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
             <button data-back-to="welcome" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">
                 &larr; Voltar
             </button>
-            <h1 class="text-4xl font-black text-black text-center">LOGIN CLIENTE</h1>
-            <input type="email" id="loginClienteEmail" placeholder="E-mail..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="password" id="loginClientePassword" placeholder="Senha..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <button id="loginClienteBtn" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105">
+            <h1 class="text-4xl font-black text-black text-center">LOGIN</h1>
+            <input type="email" id="loginEmail" placeholder="E-mail..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="password" id="loginPassword" placeholder="Senha..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <button id="loginBtn" data-user-type="" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105">
                 Entrar
             </button>
             <p class="mt-4 text-center text-sm text-gray-600">
-                Não tem cadastro? <a href="#" id="navigateToCadastroCliente" class="text-orange-600 underline font-semibold">Cadastre-se aqui</a>.
-            </p>
-        </div>
-    </div>
-
-    <!-- Tela de Login Motoboy -->
-    <div id="login-motoboy-screen" class="screen flex-col items-center justify-center min-h-screen">
-        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
-            <button data-back-to="welcome" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">
-                &larr; Voltar
-            </button>
-            <h1 class="text-4xl font-black text-black text-center">LOGIN MOTOBOY</h1>
-            <input type="email" id="loginMotoboyEmail" placeholder="E-mail..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="password" id="loginMotoboyPassword" placeholder="Senha..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <button id="loginMotoboyBtn" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105">
-                Entrar
-            </button>
-            <p class="mt-4 text-center text-sm text-gray-600">
-                Não tem cadastro? <a href="#" id="navigateToCadastroMotoboy" class="text-orange-600 underline font-semibold">Cadastre-se aqui</a>.
+                Não tem cadastro? <a href="#" id="navigateToCadastro" class="text-orange-600 underline font-semibold">Cadastre-se aqui</a>.
             </p>
         </div>
     </div>
@@ -166,7 +147,7 @@
 
             <!-- Outros campos -->
             <div class="w-full relative">
-                <input type="number" id="pesoInput" placeholder="Peso da mercadoria (kg)" class="w-full p-4 rounded-full border-2 border-orange-500" />
+                <input type="text" id="pesoInput" placeholder="Peso da mercadoria (kg)" class="w-full p-4 rounded-full border-2 border-orange-500" />
                 <p id="pesoWarning" class="text-sm text-red-500 text-center mt-2 hidden">A mercadoria não pode passar de 10kg!</p>
             </div>
             <div class="w-full relative">
@@ -246,21 +227,10 @@
         </div>
     </div>
 
-    <!-- Modal de Mensagem -->
-    <div id="messageModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg shadow-xl p-6 m-4 max-w-sm w-full">
-            <h3 id="modalTitle" class="text-xl font-bold text-gray-800 mb-2"></h3>
-            <p id="modalMessage" class="text-gray-600 mb-4"></p>
-            <button onclick="closeModal()" class="w-full px-4 py-2 font-bold text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors">
-                OK
-            </button>
-        </div>
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, addDoc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Variáveis globais e inicialização do Firebase
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -268,26 +238,65 @@
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         let db, auth;
         let userId = null;
+        let userType = null;
 
-        const screens = document.querySelectorAll('.screen');
-        const navButtons = document.querySelectorAll('button[data-screen]');
-        const backButtons = document.querySelectorAll('button[data-back-to]');
+        const initFirebase = async () => {
+            if (firebaseConfig) {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                console.log("Firebase inicializado!");
+                
+                // Listener de autenticação para controle de telas
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Usuário autenticado:", userId);
+                        // Tenta buscar o tipo de usuário no banco de dados
+                        const clienteDoc = await getDoc(doc(db, `artifacts/${appId}/public/data/clientes`, userId));
+                        if (clienteDoc.exists()) {
+                            userType = 'cliente';
+                            showScreen('cliente');
+                            return;
+                        }
+                        const motoboyDoc = await getDoc(doc(db, `artifacts/${appId}/public/data/motoboys`, userId));
+                        if (motoboyDoc.exists()) {
+                            userType = 'motoboy';
+                            showScreen('motoboy');
+                            return;
+                        }
+                        // Se não for cliente ou motoboy, mostra a tela de boas-vindas
+                        userType = null;
+                        showScreen('welcome');
+                    } else {
+                        userId = null;
+                        userType = null;
+                        console.log("Nenhum usuário logado.");
+                        showScreen('welcome');
+                    }
+                });
 
-        const modal = {
-            element: document.getElementById('messageModal'),
-            title: document.getElementById('modalTitle'),
-            message: document.getElementById('modalMessage')
+                // Autenticação inicial com token ou anônima
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken).catch(async (error) => {
+                        console.error("Erro ao autenticar com token:", error);
+                        await signInAnonymously(auth);
+                    });
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } else {
+                console.error("Configuração do Firebase não encontrada.");
+            }
         };
-
-        function showModal(title, message) {
-            modal.title.textContent = title;
-            modal.message.textContent = message;
-            modal.element.classList.remove('hidden');
-        }
-
-        function closeModal() {
-            modal.element.classList.add('hidden');
-        }
+        initFirebase();
+        
+        // Lógica para a navegação das telas
+        const screens = document.querySelectorAll('.screen');
+        const welcomeButtons = document.querySelectorAll('#welcome-screen button[data-screen]');
+        const backButtons = document.querySelectorAll('button[data-back-to]');
+        const loginBtn = document.getElementById('loginBtn');
+        const navigateToCadastroLink = document.getElementById('navigateToCadastro');
 
         const showScreen = (screenId) => {
             screens.forEach(screen => screen.classList.remove('active'));
@@ -298,26 +307,43 @@
             }
         };
         
-        navButtons.forEach(button => {
-            button.addEventListener('click', () => showScreen(button.dataset.screen));
+        // Define o tipo de usuário antes de ir para a tela de login
+        welcomeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const screen = button.dataset.screen;
+                userType = screen.split('-')[1]; // 'cliente' or 'motoboy'
+                loginBtn.dataset.userType = userType;
+                navigateToCadastroLink.textContent = `Não tem cadastro? Cadastre-se como ${userType} aqui.`;
+                showScreen('login');
+            });
         });
 
         backButtons.forEach(button => {
-            button.addEventListener('click', () => showScreen(button.dataset.backTo));
+            button.addEventListener('click', () => {
+                const screen = button.dataset.backTo;
+                // For 'login' back button, redirect based on userType
+                if (screen === 'login') {
+                    showScreen('welcome');
+                } else if (screen === 'welcome') {
+                    signOut(auth);
+                    showScreen('welcome');
+                } else {
+                    showScreen(screen);
+                }
+            });
         });
-        
-        // Navegação de cadastro a partir dos botões de login
-        document.getElementById('navigateToCadastroCliente').addEventListener('click', (e) => {
+
+        navigateToCadastroLink.addEventListener('click', (e) => {
             e.preventDefault();
-            showScreen('cadastro-cliente');
+            const userType = loginBtn.dataset.userType;
+            if (userType === 'cliente') {
+                showScreen('cadastro-cliente');
+            } else if (userType === 'motoboy') {
+                showScreen('cadastro-motoboy');
+            }
         });
         
-        document.getElementById('navigateToCadastroMotoboy').addEventListener('click', (e) => {
-            e.preventDefault();
-            showScreen('cadastro-motoboy');
-        });
-        
-        // --- Funções de Renderização ---
+        // Função para renderizar os pedidos
         const renderPedidoCard = (pedido, container) => {
             const card = document.createElement('div');
             card.className = 'bg-white p-4 rounded-xl shadow-md border-2 border-orange-500';
@@ -329,7 +355,7 @@
                 <p class="text-sm text-gray-500 mt-1">Peso: ${pedido.peso}kg | Tipo: ${pedido.tipoEntrega} | Tamanho: ${pedido.tamanho}</p>
                 ${pedido.motoboyId ? `<p class="text-sm text-gray-500 mt-1">Motoboy ID: ${pedido.motoboyId}</p>` : ''}
             `;
-            if (pedido.status === 'aguardando_motoboy' && document.getElementById('motoboy-screen').classList.contains('active')) {
+            if (pedido.status === 'aguardando_motoboy' && userType === 'motoboy') {
                 const acceptBtn = document.createElement('button');
                 acceptBtn.textContent = 'Aceitar Corrida';
                 acceptBtn.className = 'mt-4 w-full bg-orange-600 text-white font-bold py-2 px-4 rounded-full hover:bg-orange-700 transition-colors transform hover:scale-105';
@@ -339,6 +365,7 @@
             container.appendChild(card);
         };
 
+        // Função para renderizar os clientes no painel do admin
         const renderClienteCard = (cliente, container) => {
             const card = document.createElement('div');
             card.className = 'bg-white p-4 rounded-xl shadow-md border-2 border-orange-500';
@@ -347,11 +374,11 @@
                 <p class="text-lg font-bold text-black mt-1">Nome: <span class="text-gray-600 font-normal">${cliente.nome}</span></p>
                 <p class="text-lg font-bold text-black mt-1">Endereço: <span class="text-gray-600 font-normal">${cliente.endereco}</span></p>
                 <p class="text-lg font-bold text-black mt-1">Telefone: <span class="text-gray-600 font-normal">${cliente.telefone}</span></p>
-                <p class="text-sm text-gray-500 mt-1">E-mail: <span class="text-black">${cliente.email}</span></p>
             `;
             container.appendChild(card);
         };
         
+        // Função para renderizar os motoboys no painel do admin
         const renderMotoboyCard = (motoboy, container) => {
             const card = document.createElement('div');
             card.className = 'bg-white p-4 rounded-xl shadow-md border-2 border-orange-500';
@@ -363,158 +390,12 @@
                 <p class="text-sm text-gray-500 mt-2">CPF: <span class="text-black">${motoboy.cpf}</span></p>
                 <p class="text-sm text-gray-500 mt-1">CNH: <span class="text-black">${motoboy.habilitacao}</span></p>
                 <p class="text-sm text-gray-500 mt-1">Vencimento da Habilitação: <span class="text-black">${motoboy.vencimentoHabilitacao}</span></p>
-                <p class="text-sm text-gray-500 mt-2">Habilitação: <span class="text-blue-500 underline">${motoboy.fotoHabilitacao}</span></p>
                 <p class="text-lg font-bold text-black mt-1">Moto: <span class="text-gray-600 font-normal">${motoboy.marcaMoto} ${motoboy.modeloMoto}</span></p>
             `;
             container.appendChild(card);
         };
 
-        // --- Lógica de Cadastro e Login ---
-        document.getElementById('cadastrarClienteBtn').addEventListener('click', async () => {
-            const nome = document.getElementById('nomeClienteInput').value.trim();
-            const email = document.getElementById('emailClienteInput').value.trim();
-            const senha = document.getElementById('senhaClienteInput').value.trim();
-            const endereco = document.getElementById('enderecoClienteInput').value.trim();
-            const telefone = document.getElementById('telefoneClienteInput').value.trim();
-            const status = document.getElementById('clienteCadastroStatus');
-
-            if (!nome || !email || !senha || !endereco || !telefone) {
-                status.textContent = 'Por favor, preencha todos os campos.';
-                return;
-            }
-
-            if (!db) { status.textContent = 'Erro de conexão com o banco de dados.'; return; }
-
-            try {
-                // Checa se o email já está em uso
-                const q = query(collection(db, `artifacts/${appId}/public/data/clientes`), where("email", "==", email));
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    showModal('Erro de Cadastro', 'Este e-mail já está cadastrado. Tente outro.');
-                    return;
-                }
-
-                // Salva os dados no Firestore usando o email como ID do documento
-                await setDoc(doc(db, `artifacts/${appId}/public/data/clientes`, email), {
-                    nome,
-                    email,
-                    senha, // Em um app real, use hash para a senha por segurança!
-                    endereco,
-                    telefone,
-                    role: 'cliente',
-                    createdAt: new Date()
-                });
-                
-                showModal('Sucesso!', 'Cadastro de cliente realizado com sucesso.');
-                showScreen('login-cliente');
-            } catch (e) {
-                console.error("Erro ao cadastrar cliente:", e);
-                showModal('Erro de Cadastro', 'Não foi possível completar o cadastro. Tente novamente mais tarde.');
-            }
-        });
-        
-        document.getElementById('cadastrarMotoboyBtn').addEventListener('click', async () => {
-            const nome = document.getElementById('nomeMotoboyInput').value.trim();
-            const email = document.getElementById('emailMotoboyInput').value.trim();
-            const senha = document.getElementById('senhaMotoboyInput').value.trim();
-            const endereco = document.getElementById('enderecoMotoboyInput').value.trim();
-            const telefone = document.getElementById('telefoneMotoboyInput').value.trim();
-            const cpf = document.getElementById('cpfMotoboyInput').value.trim();
-            const habilitacao = document.getElementById('habilitacaoInput').value.trim();
-            const vencimentoHabilitacao = document.getElementById('vencimentoHabilitacaoInput').value.trim();
-            const fotoHabilitacaoFile = document.getElementById('fotoHabilitacaoInput').files[0];
-            const marcaMoto = document.getElementById('marcaMotoInput').value.trim();
-            const modeloMoto = document.getElementById('modeloMotoInput').value.trim();
-            const anoMoto = document.getElementById('anoMotoInput').value.trim();
-            const corMoto = document.getElementById('corMotoInput').value.trim();
-            const docMotoFile = document.getElementById('docMotoInput').files[0];
-            const status = document.getElementById('motoboyCadastroStatus');
-
-            if (!nome || !email || !senha || !endereco || !telefone || !cpf || !habilitacao || !vencimentoHabilitacao || !marcaMoto || !modeloMoto || !anoMoto || !corMoto || !fotoHabilitacaoFile || !docMotoFile) {
-                status.textContent = 'Por favor, preencha todos os campos e anexe os documentos.';
-                return;
-            }
-
-            if (!db) { status.textContent = 'Erro de conexão com o banco de dados.'; return; }
-            
-            try {
-                // Checa se o email já está em uso
-                const q = query(collection(db, `artifacts/${appId}/public/data/motoboys`), where("email", "==", email));
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    showModal('Erro de Cadastro', 'Este e-mail já está cadastrado. Tente outro.');
-                    return;
-                }
-
-                // Salva os dados no Firestore usando o email como ID do documento
-                await setDoc(doc(db, `artifacts/${appId}/public/data/motoboys`, email), {
-                    nome,
-                    email,
-                    senha, // Em um app real, use hash para a senha por segurança!
-                    endereco,
-                    telefone,
-                    cpf,
-                    habilitacao,
-                    vencimentoHabilitacao,
-                    fotoHabilitacao: fotoHabilitacaoFile.name, // Em um app real, o link do storage iria aqui
-                    marcaMoto,
-                    modeloMoto,
-                    anoMoto,
-                    corMoto,
-                    docMoto: docMotoFile.name, // Em um app real, o link do storage iria aqui
-                    role: 'motoboy',
-                    status: 'online',
-                    createdAt: new Date()
-                });
-                
-                showModal('Sucesso!', 'Cadastro de motoboy realizado com sucesso. Aguarde a aprovação do admin.');
-                showScreen('login-motoboy');
-            } catch (e) {
-                console.error("Erro ao cadastrar motoboy:", e);
-                showModal('Erro de Cadastro', 'Não foi possível completar o cadastro. Tente novamente mais tarde.');
-            }
-        });
-        
-        document.getElementById('loginClienteBtn').addEventListener('click', async () => {
-            const email = document.getElementById('loginClienteEmail').value.trim();
-            const senha = document.getElementById('loginClientePassword').value.trim();
-            
-            try {
-                const userDoc = await getDoc(doc(db, `artifacts/${appId}/public/data/clientes`, email));
-                if (!userDoc.exists() || userDoc.data().senha !== senha) {
-                    showModal('Erro de Login', 'Email ou senha inválidos.');
-                    return;
-                }
-                // Login com o token anônimo, para ter acesso ao banco
-                await (initialAuthToken ? signInWithCustomToken(auth, initialAuthToken) : signInAnonymously(auth));
-                userId = auth.currentUser.uid;
-                showScreen('cliente');
-            } catch (e) {
-                console.error("Erro no login do cliente:", e);
-                showModal('Erro de Login', 'Não foi possível fazer o login.');
-            }
-        });
-        
-        document.getElementById('loginMotoboyBtn').addEventListener('click', async () => {
-            const email = document.getElementById('loginMotoboyEmail').value.trim();
-            const senha = document.getElementById('loginMotoboyPassword').value.trim();
-            
-            try {
-                const userDoc = await getDoc(doc(db, `artifacts/${appId}/public/data/motoboys`, email));
-                if (!userDoc.exists() || userDoc.data().senha !== senha) {
-                    showModal('Erro de Login', 'Email ou senha inválidos.');
-                    return;
-                }
-                await (initialAuthToken ? signInWithCustomToken(auth, initialAuthToken) : signInAnonymously(auth));
-                userId = auth.currentUser.uid;
-                showScreen('motoboy');
-            } catch (e) {
-                console.error("Erro no login do motoboy:", e);
-                showModal('Erro de Login', 'Não foi possível fazer o login.');
-            }
-        });
-
-        // --- Lógica para controle de telas e dados em tempo real ---
+        // Lógica para controle de telas e dados em tempo real
         let motoboyUnsubscribe = () => {};
         let adminUnsubscribePedidos = () => {};
         let adminUnsubscribeClientes = () => {};
@@ -623,7 +504,7 @@
             }
         };
         
-        // --- Lógica da Tela do Cliente ---
+        // Lógica da Tela do Cliente
         const solicitarBtn = document.getElementById('solicitarBtn');
         solicitarBtn.addEventListener('click', async () => {
             const enderecoColeta = document.getElementById('enderecoColetaInput').value.trim();
@@ -658,7 +539,6 @@
                 tipoEntrega,
                 status: 'aguardando_motoboy',
                 clienteId: userId,
-                createdAt: new Date()
             };
 
             try {
@@ -682,7 +562,66 @@
             }
         };
 
-        // --- Lógica para o campo de upload ---
+        // Lógica da Tela de Login e Cadastro
+        
+        // Handle user login
+        loginBtn.addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const messageBox = document.getElementById('motoboyCadastroStatus') || document.getElementById('clienteCadastroStatus');
+            
+            if (!email || !password) {
+                messageBox.textContent = 'Preencha o email e a senha.';
+                return;
+            }
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                messageBox.textContent = 'Login realizado com sucesso!';
+                // onAuthStateChanged will handle screen change
+            } catch (error) {
+                console.error("Erro no login:", error);
+                messageBox.textContent = `Erro no login: ${error.message}`;
+            }
+        });
+
+        // Lógica da Tela de Cadastro de Clientes
+        const cadastrarClienteBtn = document.getElementById('cadastrarClienteBtn');
+        cadastrarClienteBtn.addEventListener('click', async () => {
+            const nome = document.getElementById('nomeClienteInput').value.trim();
+            const email = document.getElementById('emailClienteInput').value.trim();
+            const senha = document.getElementById('senhaClienteInput').value.trim();
+            const endereco = document.getElementById('enderecoClienteInput').value.trim();
+            const telefone = document.getElementById('telefoneClienteInput').value.trim();
+            const status = document.getElementById('clienteCadastroStatus');
+
+            if (!nome || !email || !senha || !endereco || !telefone) {
+                status.textContent = 'Por favor, preencha todos os campos.';
+                return;
+            }
+
+            if (!db) { status.textContent = 'Erro de conexão com o banco de dados.'; return; }
+
+            status.textContent = 'Cadastrando...';
+            try {
+                // Cria o usuário no Firebase Authentication
+                const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+                const uid = userCredential.user.uid;
+
+                // Salva os dados do cliente no Firestore
+                const clienteData = { nome, email, endereco, telefone, uid };
+                await setDoc(doc(db, `artifacts/${appId}/public/data/clientes`, uid), clienteData);
+                
+                status.textContent = 'Cliente cadastrado com sucesso!';
+                // onAuthStateChanged will handle screen change
+            } catch (e) {
+                console.error("Erro ao cadastrar cliente:", e);
+                status.textContent = 'Erro ao cadastrar cliente: ' + e.message;
+            }
+        });
+
+        // Lógica da Tela de Cadastro de Motoboys
+        const cadastrarMotoboyBtn = document.getElementById('cadastrarMotoboyBtn');
         const fotoHabilitacaoInput = document.getElementById('fotoHabilitacaoInput');
         const docMotoInput = document.getElementById('docMotoInput');
         const fotoHabilitacaoLabel = document.getElementById('fotoHabilitacaoLabel');
@@ -704,25 +643,51 @@
             }
         });
 
-        // Inicia a autenticação e a interface
-        const initFirebase = async () => {
-            if (firebaseConfig) {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                
-                try {
-                    // Autentica com o token fornecido ou de forma anônima
-                    await (initialAuthToken ? signInWithCustomToken(auth, initialAuthToken) : signInAnonymously(auth));
-                    userId = auth.currentUser.uid;
-                } catch (error) {
-                    console.error("Erro na autenticação:", error);
-                }
-            } else {
-                console.error("Configuração do Firebase não encontrada.");
+        cadastrarMotoboyBtn.addEventListener('click', async () => {
+            const nome = document.getElementById('nomeMotoboyInput').value.trim();
+            const email = document.getElementById('emailMotoboyInput').value.trim();
+            const senha = document.getElementById('senhaMotoboyInput').value.trim();
+            const endereco = document.getElementById('enderecoMotoboyInput').value.trim();
+            const telefone = document.getElementById('telefoneMotoboyInput').value.trim();
+            const cpf = document.getElementById('cpfMotoboyInput').value.trim();
+            const habilitacao = document.getElementById('habilitacaoInput').value.trim();
+            const vencimentoHabilitacao = document.getElementById('vencimentoHabilitacaoInput').value.trim();
+            const marcaMoto = document.getElementById('marcaMotoInput').value.trim();
+            const modeloMoto = document.getElementById('modeloMotoInput').value.trim();
+            const anoMoto = document.getElementById('anoMotoInput').value.trim();
+            const corMoto = document.getElementById('corMotoInput').value.trim();
+            const status = document.getElementById('motoboyCadastroStatus');
+
+            if (!nome || !email || !senha || !endereco || !telefone || !cpf || !habilitacao || !vencimentoHabilitacao || !marcaMoto || !modeloMoto || !anoMoto || !corMoto) {
+                status.textContent = 'Por favor, preencha todos os campos.';
+                return;
             }
-        };
-        initFirebase();
+
+            if (!db) { status.textContent = 'Erro de conexão com o banco de dados.'; return; }
+
+            status.textContent = 'Cadastrando...';
+            try {
+                // Cria o usuário no Firebase Authentication
+                const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+                const uid = userCredential.user.uid;
+
+                // Salva os dados do motoboy no Firestore
+                const motoboyData = {
+                    nome, email, endereco, telefone, cpf, habilitacao, vencimentoHabilitacao,
+                    marcaMoto, modeloMoto, anoMoto, corMoto, uid,
+                    fotoHabilitacao: 'URL_DA_FOTO_DA_HABILITACAO', // Placeholder, precisa do Storage
+                    docMoto: 'URL_DO_DOCUMENTO_DA_MOTO', // Placeholder, precisa do Storage
+                    status: 'offline', // Status inicial
+                };
+                await setDoc(doc(db, `artifacts/${appId}/public/data/motoboys`, uid), motoboyData);
+                
+                status.textContent = 'Motoboy cadastrado com sucesso!';
+                // onAuthStateChanged will handle screen change
+            } catch (e) {
+                console.error("Erro ao cadastrar motoboy:", e);
+                status.textContent = 'Erro ao cadastrar motoboy: ' + e.message;
+            }
+        });
     </script>
 </body>
 </html>
