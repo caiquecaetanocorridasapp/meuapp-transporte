@@ -88,13 +88,11 @@
     
     <div id="message-box" class="message-box"></div>
 
-    <!-- Navegação Principal entre as telas -->
     <div class="fixed top-4 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg p-2 flex items-center justify-center space-x-2 z-50">
         <button data-screen="admin" class="px-4 py-2 rounded-full text-sm font-semibold text-black bg-white transition-colors hover:text-white hover:bg-orange-600 shadow-md">Admin</button>
         <button id="logoutBtn" class="px-4 py-2 rounded-full text-sm font-semibold text-black bg-white transition-colors hover:text-white hover:bg-red-600 shadow-md">Sair</button>
     </div>
 
-    <!-- Tela de Boas-Vindas -->
     <div id="welcome-screen" class="screen active flex-col items-center justify-center w-full min-h-screen">
         <div class="screen-container rounded-3xl p-8 flex flex-col items-center space-y-6">
             <h1 class="text-5xl font-black text-black text-center uppercase tracking-widest">
@@ -112,7 +110,6 @@
         </div>
     </div>
 
-    <!-- Tela de Login -->
     <div id="login-screen" class="screen flex-col items-center justify-center w-full min-h-screen">
         <div class="screen-container rounded-3xl p-8 flex flex-col items-center space-y-6">
             <button data-back-to="welcome" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">&larr; Voltar</button>
@@ -129,7 +126,6 @@
         </div>
     </div>
 
-    <!-- Tela de Cadastro do Cliente -->
     <div id="cadastro-cliente-screen" class="screen flex-col items-center justify-center w-full min-h-screen">
         <div class="screen-container rounded-3xl p-8 flex flex-col items-center space-y-6">
             <button data-back-to="login-cliente" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">&larr; Voltar</button>
@@ -146,7 +142,6 @@
         </div>
     </div>
 
-    <!-- Tela de Cadastro do Motoboy -->
     <div id="cadastro-motoboy-screen" class="screen flex-col items-center justify-center w-full min-h-screen">
         <div class="screen-container rounded-3xl p-8 flex flex-col items-center space-y-6">
             <button data-back-to="login-motoboy" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">&larr; Voltar</button>
@@ -178,7 +173,6 @@
         </div>
     </div>
     
-    <!-- Tela do Cliente -->
     <div id="cliente-screen" class="screen flex-col items-center justify-center w-full min-h-screen">
         <div class="screen-container rounded-3xl p-8 flex flex-col items-center space-y-6">
             <button data-back-to="welcome" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">&larr; Sair</button>
@@ -231,7 +225,6 @@
         </div>
     </div>
 
-    <!-- Tela do Motoboy -->
     <div id="motoboy-screen" class="screen flex-col items-center justify-center w-full min-h-screen">
         <div class="screen-container rounded-3xl p-8 flex flex-col items-center space-y-6">
             <button data-back-to="welcome" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">&larr; Sair</button>
@@ -256,7 +249,6 @@
         </div>
     </div>
 
-    <!-- Tela do Administrador -->
     <div id="admin-screen" class="screen flex-col items-center justify-center w-full min-h-screen">
         <div class="screen-container rounded-3xl p-8 flex flex-col items-center space-y-6">
             <button data-back-to="welcome" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">&larr; Sair</button>
@@ -284,7 +276,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, setDoc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, setDoc, getDoc, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
 
         // Variáveis globais e inicialização do Firebase
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -298,7 +291,7 @@
             measurementId: "G-EWNZHFDFKZ"
         };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        let db, auth;
+        let db, auth, storage;
         let userId = null;
         let userType = null;
         let isAuthReady = false;
@@ -322,25 +315,27 @@
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                
+                storage = getStorage(app);
+
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
                         console.log("Usuário autenticado:", userId);
-                        
-                        // Busca o tipo de usuário no banco de dados para autenticar
-                        const clienteDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/profile/cliente`));
-                        const motoboyDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/profile/motoboy`));
 
-                        if (clienteDoc.exists()) {
-                            userType = 'cliente';
-                            showScreen('cliente');
-                        } else if (motoboyDoc.exists()) {
-                            userType = 'motoboy';
-                            showScreen('motoboy');
+                        const userProfileDoc = doc(db, 'users', userId);
+                        const userProfileSnap = await getDoc(userProfileDoc);
+
+                        if (userProfileSnap.exists()) {
+                            const data = userProfileSnap.data();
+                            userType = data.userType;
+                            if (userType === 'admin') {
+                                showScreen('admin');
+                            } else if (userType === 'cliente') {
+                                showScreen('cliente');
+                            } else if (userType === 'motoboy') {
+                                showScreen('motoboy');
+                            }
                         } else {
-                            // Se o usuário autenticado não for cliente nem motoboy,
-                            // redireciona para a tela de login.
                             userType = null;
                             showScreen('welcome');
                         }
@@ -368,7 +363,7 @@
             }
         };
         initFirebase();
-        
+
         // Lógica para a navegação das telas
         const screens = document.querySelectorAll('.screen');
         const welcomeButtons = document.querySelectorAll('#welcome-screen button[data-screen]');
@@ -383,21 +378,21 @@
             const targetScreen = document.getElementById(screenId + '-screen');
             if (targetScreen) {
                 targetScreen.classList.add('active');
-                updateScreenLogic(screenId);
             }
             // Controla a visibilidade dos botões de navegação
             if (screenId === 'welcome') {
                 logoutBtn.style.display = 'none';
-                adminBtn.style.display = 'none';
+                adminBtn.style.display = 'block'; // Admin button is always visible
             } else if (screenId === 'admin') {
                 logoutBtn.style.display = 'block';
                 adminBtn.style.display = 'none';
             } else {
                 logoutBtn.style.display = 'block';
-                adminBtn.style.display = 'none';
+                adminBtn.style.display = 'block';
             }
+            updateScreenLogic(screenId);
         };
-        
+
         // Define o tipo de usuário antes de ir para a tela de login
         welcomeButtons.forEach(button => {
             button.addEventListener('click', () => {
@@ -470,7 +465,7 @@
                 acceptBtn.addEventListener('click', () => aceitarPedido(pedido.id, userId));
                 card.appendChild(acceptBtn);
             }
-             if (pedido.status === 'em_andamento' && userType === 'motoboy') {
+            if (pedido.status === 'em_andamento' && userType === 'motoboy') {
                 const finishBtn = document.createElement('button');
                 finishBtn.textContent = 'Concluir Entrega';
                 finishBtn.className = 'btn-main mt-4 w-full bg-green-600 text-white font-bold py-2 px-4 rounded-full hover:bg-green-700';
@@ -505,7 +500,7 @@
             container.appendChild(card);
         };
 
-        // Lógica para controle de telas e dados em tempo real
+        // Funções para controle de telas e dados em tempo real
         let motoboyUnsubscribe = () => {};
         let adminUnsubscribePedidos = () => {};
         let adminUnsubscribeClientes = () => {};
@@ -520,181 +515,154 @@
             clienteUnsubscribePedidos();
             
             if (screenId === 'cliente') {
-                const clientePedidosContainer = document.getElementById('clientePedidosContainer');
-                const clienteStatus = document.getElementById('clienteStatus');
-                clienteStatus.textContent = 'Carregando seus pedidos...';
-
-                if (!userId) {
-                    clienteStatus.textContent = 'Erro: Usuário não autenticado.';
-                    return;
-                }
-
-                clienteUnsubscribePedidos = onSnapshot(query(collection(db, `artifacts/${appId}/public/data/pedidos`), where('clienteId', '==', userId)), (querySnapshot) => {
-                    clientePedidosContainer.innerHTML = '';
-                    if (!querySnapshot.empty) {
-                        querySnapshot.forEach(doc => renderPedidoCard({ ...doc.data(), id: doc.id }, clientePedidosContainer));
-                        clienteStatus.textContent = '';
-                    } else {
-                        clientePedidosContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum pedido seu foi encontrado.</p>`;
-                        clienteStatus.textContent = '';
-                    }
-                }, error => {
-                    console.error("Erro ao carregar pedidos do cliente:", error);
-                    clienteStatus.textContent = 'Erro ao carregar seus pedidos.';
-                });
-
+                updateClienteScreen();
             } else if (screenId === 'motoboy') {
-                const motoboySwitch = document.getElementById('motoboySwitch');
-                const motoboyStatusText = document.getElementById('motoboyStatusText');
-                const motoboyJobsContainer = document.getElementById('motoboyJobsContainer');
-                const motoboyNoJobs = document.getElementById('motoboyNoJobs');
-                const motoboyStatusMessage = document.getElementById('motoboyStatusMessage');
-
-                motoboySwitch.checked = false;
-                motoboyStatusText.textContent = 'Offline';
-                motoboyStatusText.classList.remove('text-green-500');
-                motoboyStatusText.classList.add('text-gray-700');
-                motoboyJobsContainer.innerHTML = '';
-                motoboyJobsContainer.appendChild(motoboyNoJobs);
-                motoboyStatusMessage.textContent = 'Fique online para receber pedidos!';
-
-                if (!userId) {
-                     motoboyStatusMessage.textContent = 'Erro: Usuário não autenticado.';
-                     return;
-                }
-                
-                // Listener para o switch de status do motoboy
-                const motoboyDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/motoboy`);
-                motoboySwitch.addEventListener('change', async (event) => {
-                    await updateDoc(motoboyDocRef, { online: event.target.checked });
-                });
-
-                // Listener para o status online/offline do motoboy
-                motoboyUnsubscribe = onSnapshot(motoboyDocRef, (doc) => {
-                    const motoboyData = doc.data();
-                    if (motoboyData && motoboyData.online) {
-                        motoboyStatusText.textContent = 'Online';
-                        motoboyStatusText.classList.remove('text-gray-700');
-                        motoboyStatusText.classList.add('text-green-500');
-                        // Listener para pedidos disponíveis quando online
-                        onSnapshot(query(collection(db, `artifacts/${appId}/public/data/pedidos`), where('status', 'in', ['aguardando_motoboy', 'em_andamento', 'entregue', 'cancelado'])), (querySnapshot) => {
-                           motoboyJobsContainer.innerHTML = '';
-                            let hasJobs = false;
-                            querySnapshot.forEach(doc => {
-                                const job = { ...doc.data(), id: doc.id };
-                                if (job.status === 'aguardando_motoboy' || (job.motoboyId === userId && job.status === 'em_andamento')) {
-                                     renderPedidoCard(job, motoboyJobsContainer);
-                                     hasJobs = true;
-                                }
-                            });
-                             if (!hasJobs) {
-                                motoboyJobsContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum pedido disponível no momento.</p>`;
-                             }
-                        });
-                    } else {
-                         motoboyStatusText.textContent = 'Offline';
-                         motoboyStatusText.classList.remove('text-green-500');
-                         motoboyStatusText.classList.add('text-gray-700');
-                         motoboyJobsContainer.innerHTML = `<p class="text-center text-gray-500">Fique online para receber pedidos!</p>`;
-                    }
-                });
-
+                updateMotoboyScreen();
             } else if (screenId === 'admin') {
-                const adminPedidosContainer = document.getElementById('adminPedidosContainer');
-                const adminClientesContainer = document.getElementById('adminClientesContainer');
-                const adminMotoboysContainer = document.getElementById('adminMotoboysContainer');
-
-                // Listeners para o painel do administrador
-                adminUnsubscribePedidos = onSnapshot(collection(db, `artifacts/${appId}/public/data/pedidos`), (querySnapshot) => {
-                    adminPedidosContainer.innerHTML = '';
-                    if (!querySnapshot.empty) {
-                        querySnapshot.forEach(doc => renderPedidoCard({ ...doc.data(), id: doc.id }, adminPedidosContainer));
-                    } else {
-                        adminPedidosContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum pedido no sistema.</p>`;
-                    }
-                }, error => { console.error("Erro ao carregar dados de pedidos do admin:", error); });
-
-                adminUnsubscribeClientes = onSnapshot(collection(db, `artifacts/${appId}/public/data/clientes`), (querySnapshot) => {
-                    adminClientesContainer.innerHTML = '';
-                    if (!querySnapshot.empty) {
-                        querySnapshot.forEach(doc => renderClienteCard({ ...doc.data(), id: doc.id }, adminClientesContainer));
-                    } else {
-                        adminClientesContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum cliente cadastrado.</p>`;
-                    }
-                }, error => { console.error("Erro ao carregar dados de clientes do admin:", error); });
-
-                adminUnsubscribeMotoboys = onSnapshot(collection(db, `artifacts/${appId}/public/data/motoboys`), (querySnapshot) => {
-                    adminMotoboysContainer.innerHTML = '';
-                    if (!querySnapshot.empty) {
-                        querySnapshot.forEach(doc => renderMotoboyCard({ ...doc.data(), id: doc.id }, adminMotoboysContainer));
-                    } else {
-                        adminMotoboysContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum motoboy cadastrado.</p>`;
-                    }
-                }, error => { console.error("Erro ao carregar dados de motoboys do admin:", error); });
+                updateAdminScreen();
             }
         };
 
-        // Funções de Ação
-        // CORRIGIDO: Login agora busca o usuário no Firestore e se autentica anonimamente
-        const loginUser = async (email, password, userType) => {
-            const loginStatus = document.getElementById('loginStatus');
-            loginStatus.textContent = 'Autenticando...';
-            try {
-                // Tenta buscar o usuário no Firestore
-                const q = query(collection(db, `artifacts/${appId}/public/data/${userType}s`), where('email', '==', email), where('password', '==', password));
-                const querySnapshot = await getDocs(q);
+        const updateClienteScreen = () => {
+            const clientePedidosContainer = document.getElementById('clientePedidosContainer');
+            const clienteStatus = document.getElementById('clienteStatus');
+            clienteStatus.textContent = 'Carregando seus pedidos...';
 
-                if (!querySnapshot.empty) {
-                    // Se encontrar o usuário, faz login anônimo
-                    await signInAnonymously(auth);
-                    loginStatus.textContent = `Login como ${userType} bem-sucedido!`;
-                } else {
-                    loginStatus.textContent = 'Credenciais incorretas. Verifique seu e-mail e senha.';
-                }
-            } catch (error) {
-                console.error("Erro de login:", error);
-                loginStatus.textContent = 'Erro de login. Verifique seu e-mail e senha.';
-            }
-        };
-
-        // CORRIGIDO: Cadastro agora usa login anônimo e salva no Firestore
-        const cadastrarCliente = async () => {
-            const nome = document.getElementById('nomeClienteInput').value;
-            const email = document.getElementById('emailClienteInput').value;
-            const senha = document.getElementById('senhaClienteInput').value;
-            const endereco = document.getElementById('enderecoClienteInput').value;
-            const telefone = document.getElementById('telefoneClienteInput').value;
-            const status = document.getElementById('clienteCadastroStatus');
-
-            if (!nome || !email || !senha || !endereco || !telefone) {
-                showMessage("Por favor, preencha todos os campos.", "error");
+            if (!userId) {
+                clienteStatus.textContent = 'Erro: Usuário não autenticado.';
                 return;
             }
 
-            status.textContent = "Cadastrando...";
-            try {
-                 // Faz login anônimo para obter um UID
-                const anonUser = await signInAnonymously(auth);
-                const uid = anonUser.user.uid;
+            const q = query(collection(db, 'pedidos'), where('clienteId', '==', userId));
+            clienteUnsubscribePedidos = onSnapshot(q, (querySnapshot) => {
+                clientePedidosContainer.innerHTML = '';
+                if (!querySnapshot.empty) {
+                    querySnapshot.forEach(doc => renderPedidoCard({ ...doc.data(), id: doc.id }, clientePedidosContainer));
+                    clienteStatus.textContent = '';
+                } else {
+                    clientePedidosContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum pedido seu foi encontrado.</p>`;
+                    clienteStatus.textContent = '';
+                }
+            }, error => {
+                console.error("Erro ao carregar pedidos do cliente:", error);
+                clienteStatus.textContent = 'Erro ao carregar seus pedidos.';
+            });
+        };
+        
+        const updateMotoboyScreen = () => {
+            const motoboyJobsContainer = document.getElementById('motoboyJobsContainer');
+            const motoboyNoJobs = document.getElementById('motoboyNoJobs');
+            motoboyJobsContainer.innerHTML = '';
+            motoboyNoJobs.style.display = 'block';
 
-                // Salva os dados no Firestore, incluindo a senha
-                // CORRIGIDO: O caminho agora é privado, específico para o usuário
-                await setDoc(doc(db, `artifacts/${appId}/users/${uid}/profile/cliente`), {
-                    nome: nome,
-                    email: email,
-                    password: senha, // Salva a senha para o login
-                    endereco: endereco,
-                    telefone: telefone
-                });
-                showMessage("Cadastro de cliente bem-sucedido!", "success");
-                showScreen('login-cliente');
-            } catch (error) {
-                console.error("Erro no cadastro do cliente:", error);
-                showMessage(`Erro no cadastro: ${error.message}`, "error");
-            }
+            const motoboySwitch = document.getElementById('motoboySwitch');
+            const motoboyStatusText = document.getElementById('motoboyStatusText');
+            motoboySwitch.checked = false;
+            motoboyStatusText.textContent = 'Offline';
+
+            motoboySwitch.addEventListener('change', async () => {
+                const isOnline = motoboySwitch.checked;
+                motoboyStatusText.textContent = isOnline ? 'Online' : 'Offline';
+                if (userId) {
+                    try {
+                        await updateDoc(doc(db, 'motoboys', userId), { online: isOnline });
+                        console.log(`Motoboy status updated to: ${isOnline}`);
+                    } catch (error) {
+                        console.error("Error updating motoboy status:", error);
+                        showMessage("Erro ao mudar seu status. Tente novamente.", "error");
+                    }
+                }
+            });
+
+            const q = query(collection(db, 'pedidos'), where('status', '==', 'aguardando_motoboy'));
+            motoboyUnsubscribe = onSnapshot(q, (querySnapshot) => {
+                motoboyJobsContainer.innerHTML = '';
+                if (!querySnapshot.empty) {
+                    querySnapshot.forEach(doc => renderPedidoCard({ ...doc.data(), id: doc.id }, motoboyJobsContainer));
+                    motoboyNoJobs.style.display = 'none';
+                } else {
+                    motoboyJobsContainer.innerHTML = `<p class="text-center text-gray-500">Nenhuma corrida disponível no momento.</p>`;
+                    motoboyNoJobs.style.display = 'block';
+                }
+            }, error => {
+                console.error("Erro ao carregar corridas:", error);
+                showMessage("Erro ao carregar corridas disponíveis.", "error");
+            });
         };
 
-        const cadastrarMotoboy = async () => {
+        const updateAdminScreen = () => {
+            const adminPedidosContainer = document.getElementById('adminPedidosContainer');
+            const adminClientesContainer = document.getElementById('adminClientesContainer');
+            const adminMotoboysContainer = document.getElementById('adminMotoboysContainer');
+
+            adminUnsubscribePedidos = onSnapshot(collection(db, 'pedidos'), (querySnapshot) => {
+                adminPedidosContainer.innerHTML = '';
+                if (!querySnapshot.empty) {
+                    querySnapshot.forEach(doc => renderPedidoCard({ ...doc.data(), id: doc.id }, adminPedidosContainer));
+                } else {
+                    adminPedidosContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum pedido encontrado.</p>`;
+                }
+            });
+
+            adminUnsubscribeClientes = onSnapshot(collection(db, 'clientes'), (querySnapshot) => {
+                adminClientesContainer.innerHTML = '';
+                if (!querySnapshot.empty) {
+                    querySnapshot.forEach(doc => renderClienteCard({ ...doc.data(), id: doc.id }, adminClientesContainer));
+                } else {
+                    adminClientesContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum cliente cadastrado.</p>`;
+                }
+            });
+
+            adminUnsubscribeMotoboys = onSnapshot(collection(db, 'motoboys'), (querySnapshot) => {
+                adminMotoboysContainer.innerHTML = '';
+                if (!querySnapshot.empty) {
+                    querySnapshot.forEach(doc => renderMotoboyCard({ ...doc.data(), id: doc.id }, adminMotoboysContainer));
+                } else {
+                    adminMotoboysContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum motoboy cadastrado.</p>`;
+                }
+            });
+        };
+        
+        // Funções para lidar com as ações do usuário
+        const cadastrarClienteBtn = document.getElementById('cadastrarClienteBtn');
+        cadastrarClienteBtn.addEventListener('click', async () => {
+            const email = document.getElementById('emailClienteInput').value;
+            const senha = document.getElementById('senhaClienteInput').value;
+            const nome = document.getElementById('nomeClienteInput').value;
+            const endereco = document.getElementById('enderecoClienteInput').value;
+            const telefone = document.getElementById('telefoneClienteInput').value;
+            const statusDiv = document.getElementById('clienteCadastroStatus');
+            statusDiv.textContent = 'Cadastrando...';
+
+            if (!email || !senha || !nome || !endereco || !telefone) {
+                showMessage('Preencha todos os campos.', 'error');
+                statusDiv.textContent = '';
+                return;
+            }
+
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, senha);
+                const uid = userCredential.user.uid;
+                await setDoc(doc(db, 'clientes', uid), {
+                    nome,
+                    email,
+                    endereco,
+                    telefone,
+                    createdAt: new Date()
+                });
+                await setDoc(doc(db, 'users', uid), { userType: 'cliente' });
+                showMessage('Cliente cadastrado com sucesso!', 'success');
+                statusDiv.textContent = 'Sucesso! Redirecionando para o login...';
+                setTimeout(() => showScreen('login'), 2000);
+            } catch (error) {
+                console.error("Erro ao cadastrar cliente:", error);
+                showMessage("Erro no cadastro: " + error.message, "error");
+                statusDiv.textContent = 'Erro ao cadastrar.';
+            }
+        });
+        
+        const cadastrarMotoboyBtn = document.getElementById('cadastrarMotoboyBtn');
+        cadastrarMotoboyBtn.addEventListener('click', async () => {
             const nome = document.getElementById('nomeMotoboyInput').value;
             const email = document.getElementById('emailMotoboyInput').value;
             const senha = document.getElementById('senhaMotoboyInput').value;
@@ -707,124 +675,159 @@
             const modeloMoto = document.getElementById('modeloMotoInput').value;
             const anoMoto = document.getElementById('anoMotoInput').value;
             const corMoto = document.getElementById('corMotoInput').value;
-            const status = document.getElementById('motoboyCadastroStatus');
+            const fotoHabilitacaoFile = document.getElementById('fotoHabilitacaoInput').files[0];
+            const docMotoFile = document.getElementById('docMotoInput').files[0];
+            const statusDiv = document.getElementById('motoboyCadastroStatus');
+            statusDiv.textContent = 'Cadastrando...';
 
-            if (!nome || !email || !senha || !endereco || !telefone || !cpf || !habilitacao || !vencimentoHabilitacao || !marcaMoto || !modeloMoto || !anoMoto || !corMoto) {
-                showMessage("Por favor, preencha todos os campos.", "error");
+            if (!nome || !email || !senha || !endereco || !telefone || !cpf || !habilitacao || !vencimentoHabilitacao || !marcaMoto || !modeloMoto || !anoMoto || !corMoto || !fotoHabilitacaoFile || !docMotoFile) {
+                showMessage('Preencha todos os campos e anexe os arquivos.', 'error');
+                statusDiv.textContent = '';
                 return;
             }
 
-            status.textContent = "Cadastrando...";
             try {
-                const anonUser = await signInAnonymously(auth);
-                const uid = anonUser.user.uid;
+                const userCredential = await auth.createUserWithEmailAndPassword(email, senha);
+                const uid = userCredential.user.uid;
 
-                // CORRIGIDO: O caminho agora é privado, específico para o usuário
-                await setDoc(doc(db, `artifacts/${appId}/users/${uid}/profile/motoboy`), {
-                    nome: nome,
-                    email: email,
-                    password: senha, // Salva a senha para o login
-                    endereco: endereco,
-                    telefone: telefone,
-                    cpf: cpf,
-                    habilitacao: habilitacao,
-                    vencimentoHabilitacao: vencimentoHabilitacao,
+                const fotoHabilitacaoRef = ref(storage, `motoboys/${uid}/habilitacao`);
+                const docMotoRef = ref(storage, `motoboys/${uid}/documento_moto`);
+                await uploadBytes(fotoHabilitacaoRef, fotoHabilitacaoFile);
+                await uploadBytes(docMotoRef, docMotoFile);
+                const fotoHabilitacaoURL = await getDownloadURL(fotoHabilitacaoRef);
+                const docMotoURL = await getDownloadURL(docMotoRef);
+
+                await setDoc(doc(db, 'motoboys', uid), {
+                    nome,
+                    email,
+                    endereco,
+                    telefone,
+                    cpf,
+                    habilitacao,
+                    vencimentoHabilitacao,
+                    marcaMoto,
+                    modeloMoto,
+                    anoMoto,
+                    corMoto,
+                    fotoHabilitacaoURL,
+                    docMotoURL,
                     online: false,
-                    moto: {
-                        marca: marcaMoto,
-                        modelo: modeloMoto,
-                        ano: anoMoto,
-                        cor: corMoto
-                    }
+                    disponivel: true,
+                    createdAt: new Date()
                 });
-                showMessage("Cadastro de motoboy bem-sucedido!", "success");
-                showScreen('login-motoboy');
+                await setDoc(doc(db, 'users', uid), { userType: 'motoboy' });
+                showMessage('Motoboy cadastrado com sucesso!', 'success');
+                statusDiv.textContent = 'Sucesso! Aguardando aprovação...';
+                setTimeout(() => showScreen('login'), 2000);
             } catch (error) {
-                console.error("Erro no cadastro do motoboy:", error);
-                showMessage(`Erro no cadastro: ${error.message}`, "error");
+                console.error("Erro ao cadastrar motoboy:", error);
+                showMessage("Erro no cadastro: " + error.message, "error");
+                statusDiv.textContent = 'Erro ao cadastrar.';
             }
-        };
+        });
 
-        const solicitarEntrega = async () => {
+        loginBtn.addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value;
+            const senha = document.getElementById('loginPassword').value;
+            const statusDiv = document.getElementById('loginStatus');
+            statusDiv.textContent = 'Entrando...';
+
+            try {
+                await auth.signInWithEmailAndPassword(email, senha);
+                // A navegação de tela é tratada pelo onAuthStateChanged
+            } catch (error) {
+                console.error("Erro no login:", error);
+                showMessage("Erro no login: " + error.message, "error");
+                statusDiv.textContent = 'Erro no login. Tente novamente.';
+            }
+        });
+        
+        const solicitarBtn = document.getElementById('solicitarBtn');
+        solicitarBtn.addEventListener('click', async () => {
             const enderecoColeta = document.getElementById('enderecoColetaInput').value;
             const enderecoEntrega = document.getElementById('enderecoEntregaInput').value;
-            const peso = parseFloat(document.getElementById('pesoInput').value);
+            const peso = document.getElementById('pesoInput').value;
             const tamanho = document.getElementById('tamanhoInput').value;
             const tipoEntrega = document.getElementById('tipoEntregaInput').value;
-            const pesoWarning = document.getElementById('pesoWarning');
-            const clienteStatus = document.getElementById('clienteStatus');
-            
-            pesoWarning.classList.add('hidden');
-            if (peso > 10) {
-                pesoWarning.classList.remove('hidden');
-                clienteStatus.textContent = '';
-                return;
-            }
+            const statusDiv = document.getElementById('clienteStatus');
+            statusDiv.textContent = 'Solicitando entrega...';
 
             if (!enderecoColeta || !enderecoEntrega || !peso || !tamanho || !tipoEntrega) {
-                showMessage("Por favor, preencha todos os campos da entrega.", "error");
+                showMessage('Preencha todos os campos para solicitar uma entrega.', 'error');
+                statusDiv.textContent = '';
                 return;
             }
-            
+
+            if (parseFloat(peso) > 10) {
+                document.getElementById('pesoWarning').classList.remove('hidden');
+                statusDiv.textContent = '';
+                return;
+            } else {
+                document.getElementById('pesoWarning').classList.add('hidden');
+            }
+
             try {
-                await addDoc(collection(db, `artifacts/${appId}/public/data/pedidos`), {
+                await addDoc(collection(db, 'pedidos'), {
                     clienteId: userId,
-                    enderecoColeta: enderecoColeta,
-                    enderecoEntrega: enderecoEntrega,
-                    peso: peso,
-                    tamanho: tamanho,
-                    tipoEntrega: tipoEntrega,
+                    enderecoColeta,
+                    enderecoEntrega,
+                    peso: parseFloat(peso),
+                    tamanho,
+                    tipoEntrega,
                     status: 'aguardando_motoboy',
-                    motoboyId: null
+                    timestamp: new Date()
                 });
-                showMessage("Pedido de entrega solicitado com sucesso!", "success");
-                document.getElementById('enderecoColetaInput').value = '';
-                document.getElementById('enderecoEntregaInput').value = '';
-                document.getElementById('pesoInput').value = '';
-                document.getElementById('tamanhoInput').value = '';
-                document.getElementById('tipoEntregaInput').value = '';
+                showMessage('Pedido de entrega solicitado com sucesso!', 'success');
+                statusDiv.textContent = 'Pedido solicitado!';
             } catch (error) {
                 console.error("Erro ao solicitar entrega:", error);
-                showMessage(`Erro ao solicitar entrega: ${error.message}`, "error");
+                showMessage("Erro ao solicitar entrega. Tente novamente.", "error");
+                statusDiv.textContent = 'Erro na solicitação.';
             }
-        };
+        });
 
         const aceitarPedido = async (pedidoId, motoboyId) => {
-            const pedidoRef = doc(db, `artifacts/${appId}/public/data/pedidos`, pedidoId);
             try {
-                await updateDoc(pedidoRef, {
+                await updateDoc(doc(db, 'pedidos', pedidoId), {
                     status: 'em_andamento',
                     motoboyId: motoboyId
                 });
-                console.log(`Pedido ${pedidoId} aceito pelo motoboy ${motoboyId}`);
+                showMessage('Corrida aceita! Vá até o local de coleta.', 'success');
             } catch (error) {
                 console.error("Erro ao aceitar pedido:", error);
+                showMessage("Erro ao aceitar a corrida. Tente novamente.", "error");
             }
         };
 
         const concluirEntrega = async (pedidoId) => {
-            const pedidoRef = doc(db, `artifacts/${appId}/public/data/pedidos`, pedidoId);
             try {
-                 await updateDoc(pedidoRef, {
+                await updateDoc(doc(db, 'pedidos', pedidoId), {
                     status: 'entregue'
                 });
-                console.log(`Entrega do pedido ${pedidoId} concluída.`);
+                showMessage('Entrega concluída com sucesso!', 'success');
             } catch (error) {
                 console.error("Erro ao concluir entrega:", error);
+                showMessage("Erro ao concluir a entrega. Tente novamente.", "error");
             }
         };
 
-        // Event Listeners
-        document.getElementById('loginBtn').addEventListener('click', () => {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const userType = document.getElementById('loginBtn').dataset.userType;
-            loginUser(email, password, userType);
+        // Lidar com o input de arquivo
+        const fotoHabilitacaoInput = document.getElementById('fotoHabilitacaoInput');
+        const fotoHabilitacaoLabel = document.getElementById('fotoHabilitacaoLabel');
+        fotoHabilitacaoInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                fotoHabilitacaoLabel.textContent = `Arquivo: ${e.target.files[0].name}`;
+            }
         });
 
-        document.getElementById('cadastrarClienteBtn').addEventListener('click', cadastrarCliente);
-        document.getElementById('cadastrarMotoboyBtn').addEventListener('click', cadastrarMotoboy);
-        document.getElementById('solicitarBtn').addEventListener('click', solicitarEntrega);
+        const docMotoInput = document.getElementById('docMotoInput');
+        const docMotoLabel = document.getElementById('docMotoLabel');
+        docMotoInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                docMotoLabel.textContent = `Arquivo: ${e.target.files[0].name}`;
+            }
+        });
+
     </script>
 </body>
 </html>
