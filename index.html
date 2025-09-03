@@ -242,7 +242,7 @@
                 Painel do Entregador
             </h2>
             <div class="w-full flex items-center justify-between p-4 bg-orange-100 rounded-2xl border-2 border-orange-500">
-                <span id="motoboyStatusText" class="text-2xl font-bold text-gray-700">Offline</span>
+                <span id="motoboyStatusText" class="text-2xl font-bold text-gray-700">Online</span>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" id="motoboySwitch" class="sr-only peer" />
                     <div class="w-14 h-8 bg-gray-400 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-[4px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-500"></div>
@@ -282,13 +282,21 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, setDoc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, setDoc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
         // Variáveis globais e inicialização do Firebase
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const firebaseConfig = {
+            apiKey: "AIzaSyBB5RZqaGMg551vFnoYe3dI2ZVG5v8Ax7E",
+            authDomain: "piramotos-c68f1.firebaseapp.com",
+            projectId: "piramotos-c68f1",
+            storageBucket: "piramotos-c68f1.firebasestorage.app",
+            messagingSenderId: "194344495789",
+            appId: "1:194344495789:web:79413bfc83f569032f3424",
+            measurementId: "G-EWNZHFDFKZ"
+        };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         let db, auth;
         let userId = null;
