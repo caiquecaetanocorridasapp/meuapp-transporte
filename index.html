@@ -9,185 +9,618 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-image: linear-gradient(to bottom, #FF8C00, #FFA500, #FFD700);
         }
         .screen {
             display: none;
-            animation: fadeIn 0.5s ease-in-out;
         }
         .screen.active {
             display: flex;
         }
-        .screen-container {
-            width: 100%;
-            max-width: 40rem;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-            border: 4px solid #FF8C00;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .input-field, .select-field {
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .input-field:focus, .select-field:focus {
-            box-shadow: 0 4px 10px rgba(255, 140, 0, 0.4);
-            transform: translateY(-2px);
-        }
-        .btn-main {
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(255, 140, 0, 0.3);
-        }
-        .btn-main:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 20px rgba(255, 140, 0, 0.5);
-        }
-        .btn-main:active {
-            transform: scale(0.95);
-        }
-        .switch-toggle {
-            transition: all 0.3s ease;
-        }
-        .switch-toggle::after {
-            transition: all 0.3s ease;
-        }
-        .peer:checked + .switch-toggle::after {
-            transform: translateX(100%);
-        }
-        .message-box {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            font-weight: bold;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4 md:p-8 bg-gray-100">
+<body class="bg-white text-black min-h-screen p-4">
 
-<div class="screen-container rounded-3xl p-6 md:p-10 text-center relative flex flex-col items-center">
+    <div class="fixed top-4 left-1/2 -translate-x-1/2 bg-orange-500 rounded-full shadow-lg p-2 flex items-center justify-center space-x-2 z-50">
+        <button data-screen="admin" class="px-4 py-2 rounded-full text-sm font-semibold text-white bg-orange-600 transition-colors hover:text-black hover:bg-white">Admin</button>
+    </div>
+
+    <div id="welcome-screen" class="screen active flex-col items-center justify-center min-h-screen">
+        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
+            <h1 class="text-5xl font-black text-black text-center uppercase tracking-widest">
+                Pira Pass
+            </h1>
+            <h2 class="text-lg font-bold text-gray-700 text-center uppercase tracking-widest">
+                Suas entregas sempre em boas mãos
+            </h2>
+            <button data-screen="login" data-user-type="cliente" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105 active:scale-95">
+                EU SOU CLIENTE
+            </button>
+            <button data-screen="login" data-user-type="motoboy" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105 active:scale-95">
+                EU SOU ENTREGADOR
+            </button>
+        </div>
+    </div>
+
+    <div id="login-screen" class="screen flex-col items-center justify-center min-h-screen">
+        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
+            <button data-back-to="welcome" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">
+                &larr; Voltar
+            </button>
+            <h1 class="text-4xl font-black text-black text-center">LOGIN</h1>
+            <input type="email" id="loginEmail" placeholder="E-mail..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="password" id="loginPassword" placeholder="Senha..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <button id="loginBtn" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105">
+                Entrar
+            </button>
+            <p class="mt-4 text-center text-sm text-gray-600">
+                Não tem cadastro? <a href="#" id="navigateToCadastro" class="text-orange-600 underline font-semibold">Cadastre-se aqui</a>.
+            </p>
+        </div>
+    </div>
+
+    <div id="cadastro-cliente-screen" class="screen flex-col items-center justify-center min-h-screen">
+        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
+            <button data-back-to="login" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">
+                &larr; Voltar
+            </button>
+            <h1 class="text-4xl font-black text-black text-center">CADASTRO CLIENTE</h1>
+            <input type="text" id="nomeClienteInput" placeholder="Nome Completo..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="email" id="emailClienteInput" placeholder="E-mail..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="password" id="senhaClienteInput" placeholder="Senha..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="text" id="enderecoClienteInput" placeholder="Endereço..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="tel" id="telefoneClienteInput" placeholder="Telefone..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <button id="cadastrarClienteBtn" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105">
+                Cadastrar
+            </button>
+            <div id="clienteCadastroStatus" class="mt-4 text-center text-orange-600 text-lg font-semibold"></div>
+        </div>
+    </div>
+
+    <div id="cadastro-motoboy-screen" class="screen flex-col items-center justify-center min-h-screen">
+        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
+            <button data-back-to="login" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">
+                &larr; Voltar
+            </button>
+            <h1 class="text-4xl font-black text-black text-center">CADASTRO MOTOBOY</h1>
+            <input type="text" id="nomeMotoboyInput" placeholder="Nome Completo..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="email" id="emailMotoboyInput" placeholder="E-mail..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="password" id="senhaMotoboyInput" placeholder="Senha..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="text" id="enderecoMotoboyInput" placeholder="Endereço..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="tel" id="telefoneMotoboyInput" placeholder="Telefone..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="text" id="cpfMotoboyInput" placeholder="CPF..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="text" id="habilitacaoInput" placeholder="Nº da Habilitação..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="date" id="vencimentoHabilitacaoInput" placeholder="Vencimento da Habilitação" class="w-full p-4 rounded-full border-2 border-orange-500">
+            
+            <label class="w-full flex items-center justify-between bg-white p-4 rounded-full border-2 border-orange-500 cursor-pointer">
+                <span id="fotoHabilitacaoLabel" class="text-gray-500">Selecione a foto da Habilitação (PDF ou imagem)...</span>
+                <input type="file" id="fotoHabilitacaoInput" class="hidden" accept=".pdf,image/*">
+            </label>
+
+            <input type="text" id="marcaMotoInput" placeholder="Marca da Moto..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="text" id="modeloMotoInput" placeholder="Modelo da Moto..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="text" id="anoMotoInput" placeholder="Ano da Moto..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            <input type="text" id="corMotoInput" placeholder="Cor da Moto..." class="w-full p-4 rounded-full border-2 border-orange-500">
+            
+            <label class="w-full flex items-center justify-between bg-white p-4 rounded-full border-2 border-orange-500 cursor-pointer">
+                <span id="docMotoLabel" class="text-gray-500">Selecione o documento da Moto (PDF ou imagem)...</span>
+                <input type="file" id="docMotoInput" class="hidden" accept=".pdf,image/*">
+            </label>
+
+            <button id="cadastrarMotoboyBtn" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105">
+                Cadastrar Motoboy
+            </button>
+            <div id="motoboyCadastroStatus" class="mt-4 text-center text-orange-600 text-lg font-semibold"></div>
+        </div>
+    </div>
     
-    <div class="flex items-center justify-center space-x-4 mb-8">
-        <img src="https://i.ibb.co/6P31T2H/logo-Pira-Pass.png" alt="Logo Pira Pass" class="w-16 h-16 md:w-20 md:h-20">
-        <h1 class="text-4xl md:text-5xl font-black text-[#FF8C00] tracking-tight">Pira Pass</h1>
-    </div>
-
-    <div id="screen1" class="screen active flex-col w-full">
-        <p class="text-lg md:text-xl text-gray-700 mb-8 max-w-lg">Sua solução completa para transportes e eventos em Piracicaba. Rápido, fácil e direto.</p>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mb-8">
-            <button onclick="showScreen('screen2')" class="btn-main bg-[#FF8C00] text-white py-4 rounded-xl text-xl md:text-2xl font-bold shadow-lg flex items-center justify-center space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5A5.5 5.5 0 0 1 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3A5.5 5.5 0 0 1 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>
-                <span>Comprar</span>
+    <div id="cliente-screen" class="screen flex-col items-center justify-center min-h-screen">
+        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
+            <button data-back-to="welcome" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">
+                &larr; Voltar
             </button>
-            <button onclick="showScreen('screen3')" class="btn-main bg-white text-[#FF8C00] py-4 rounded-xl text-xl md:text-2xl font-bold shadow-lg flex items-center justify-center space-x-2 border-2 border-[#FF8C00]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8A8 8 0 0 1 12 20zm0-4a4 4 0 1 0 4-4A4 4 0 0 0 12 16zm0-2a2 2 0 1 1 2-2A2 2 0 0 1 12 14z"></path></svg>
-                <span>Recarregar</span>
+            <h1 class="text-5xl font-black text-black text-center uppercase tracking-widest">
+                Pira Pass
+            </h1>
+            <h2 class="text-lg font-bold text-gray-700 text-center uppercase tracking-widest">
+                Suas entregas sempre em boas mãos
+            </h2>
+            
+            <div class="w-full relative">
+                <input type="text" id="enderecoColetaInput" placeholder="Endereço de Coleta..." class="w-full p-4 pl-12 rounded-full border-2 border-orange-500 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all text-black placeholder-gray-500" />
+                <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </div>
+
+            <div class="w-full relative">
+                <input type="text" id="enderecoEntregaInput" placeholder="Endereço de Entrega..." class="w-full p-4 pl-12 rounded-full border-2 border-orange-500 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all text-black placeholder-gray-500" />
+                <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </div>
+
+            <div class="w-full relative">
+                <input type="number" id="pesoInput" placeholder="Peso da mercadoria (kg)" class="w-full p-4 rounded-full border-2 border-orange-500" min="0" max="10" step="0.1" />
+                <p id="pesoWarning" class="text-sm text-red-500 text-center mt-2 hidden">A mercadoria não pode passar de 10kg!</p>
+            </div>
+            <div class="w-full relative">
+                <select id="tamanhoInput" class="w-full p-4 rounded-full border-2 border-orange-500 bg-white text-black">
+                    <option value="">Selecione o tamanho...</option>
+                    <option value="pequeno">Pequeno</option>
+                    <option value="medio">Médio</option>
+                    <option value="grande">Grande</option>
+                </select>
+            </div>
+            <div class="w-full relative">
+                <select id="tipoEntregaInput" class="w-full p-4 rounded-full border-2 border-orange-500 bg-white text-black">
+                    <option value="">Selecione o tipo de entrega...</option>
+                    <option value="caixa">Caixa de Entrega</option>
+                    <option value="mochila">Mochila</option>
+                    <option value="rede">Rede</option>
+                    <option value="documento">Documento</option>
+                </select>
+            </div>
+
+            <button id="solicitarBtn" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105 active:scale-95">
+                Solicitar Entrega
             </button>
+            <div id="clienteStatus" class="mt-4 text-center text-orange-600 text-lg font-semibold"></div>
         </div>
-        
-        <a href="#" class="text-[#FF8C00] font-medium hover:underline text-lg md:text-xl">Precisa de ajuda?</a>
     </div>
 
-    <div id="screen2" class="screen flex-col w-full">
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-6">Comprar um bilhete</h2>
-        
-        <div class="w-full">
-            <label for="ticket-type" class="block text-left text-lg md:text-xl font-semibold text-gray-700 mb-2">Tipo de Bilhete</label>
-            <select id="ticket-type" class="select-field w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-4 focus:ring-orange-200 text-gray-800">
-                <option value="transporte">Transporte Público</option>
-                <option value="evento-x">Evento X</option>
-                <option value="evento-y">Evento Y</option>
-            </select>
+    <div id="motoboy-screen" class="screen flex-col items-center justify-center min-h-screen">
+        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
+            <button data-back-to="welcome" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">
+                &larr; Voltar
+            </button>
+            <h1 class="text-5xl font-black text-black text-center uppercase tracking-widest">
+                Pira Pass
+            </h1>
+            <h2 class="text-lg font-bold text-gray-700 text-center uppercase tracking-widest">
+                Painel do Entregador
+            </h2>
+            <div class="w-full flex items-center justify-between p-4 bg-orange-100 rounded-2xl border-2 border-orange-500">
+                <span id="motoboyStatusText" class="text-2xl font-bold text-gray-700">Offline</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="motoboySwitch" class="sr-only peer" />
+                    <div class="w-14 h-8 bg-gray-400 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-[4px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-500"></div>
+                </label>
+            </div>
+            <h2 class="text-2xl font-bold text-orange-600 mt-4">Corridas Disponíveis</h2>
+            <div id="motoboyJobsContainer" class="w-full space-y-4">
+                <p id="motoboyNoJobs" class="text-center text-gray-500">Fique online para receber pedidos!</p>
+            </div>
+            <div id="motoboyStatusMessage" class="mt-4 text-center text-orange-600 text-lg font-semibold"></div>
         </div>
-        
-        <div class="mt-6 w-full">
-            <label for="quantity" class="block text-left text-lg md:text-xl font-semibold text-gray-700 mb-2">Quantidade</label>
-            <input type="number" id="quantity" value="1" min="1" class="input-field w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-4 focus:ring-orange-200 text-gray-800">
-        </div>
-        
-        <button onclick="processPurchase()" class="btn-main bg-[#FF8C00] text-white py-4 rounded-xl text-xl md:text-2xl font-bold mt-8 w-full shadow-lg">Confirmar Compra</button>
-        <button onclick="showScreen('screen1')" class="mt-4 text-gray-600 hover:underline">Voltar</button>
     </div>
 
-    <div id="screen3" class="screen flex-col w-full">
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-6">Recarregar seu cartão</h2>
-        
-        <div class="w-full">
-            <label for="card-number" class="block text-left text-lg md:text-xl font-semibold text-gray-700 mb-2">Número do Cartão</label>
-            <input type="text" id="card-number" placeholder="Digite o número do cartão" class="input-field w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-4 focus:ring-orange-200 text-gray-800">
+    <div id="admin-screen" class="screen flex-col items-center justify-center min-h-screen">
+        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
+            <h1 class="text-5xl font-black text-black text-center uppercase tracking-widest">
+                Pira Pass
+            </h1>
+            <h2 class="text-lg font-bold text-gray-700 text-center uppercase tracking-widest">
+                Painel do Administrador
+            </h2>
+            <h3 class="text-2xl font-bold text-orange-600 mt-8">Todos os Pedidos</h3>
+            <div id="adminPedidosContainer" class="w-full space-y-4">
+                <p class="text-center text-gray-500">Aguardando pedidos...</p>
+            </div>
+            <h3 class="text-2xl font-bold text-orange-600 mt-8">Clientes Cadastrados</h3>
+            <div id="adminClientesContainer" class="w-full space-y-4">
+                <p class="text-center text-gray-500">Nenhum cliente cadastrado.</p>
+            </div>
+            <h3 class="text-2xl font-bold text-orange-600 mt-8">Motoboys Cadastrados</h3>
+            <div id="adminMotoboysContainer" class="w-full space-y-4">
+                <p class="text-center text-gray-500">Nenhum motoboy cadastrado.</p>
+            </div>
         </div>
-        
-        <div class="mt-6 w-full">
-            <label for="recharge-amount" class="block text-left text-lg md:text-xl font-semibold text-gray-700 mb-2">Valor da Recarga</label>
-            <input type="number" id="recharge-amount" value="20" min="5" step="5" class="input-field w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-4 focus:ring-orange-200 text-gray-800">
-        </div>
-        
-        <button onclick="processRecharge()" class="btn-main bg-[#FF8C00] text-white py-4 rounded-xl text-xl md:text-2xl font-bold mt-8 w-full shadow-lg">Confirmar Recarga</button>
-        <button onclick="showScreen('screen1')" class="mt-4 text-gray-600 hover:underline">Voltar</button>
     </div>
 
-</div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Coloque suas configurações do Firebase aqui!
+        // As informações são encontradas no console do seu projeto Firebase.
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY",
+            authDomain: "SEU_AUTH_DOMAIN",
+            projectId: "SEU_PROJECT_ID",
+            storageBucket: "SEU_STORAGE_BUCKET",
+            messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+            appId: "SEU_APP_ID"
+        };
 
-<div id="message-box" class="message-box"></div>
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // Autenticação anônima para demonstração
+        let userId = null;
+        signInAnonymously(auth)
+            .then(() => {
+                userId = auth.currentUser.uid;
+                console.log("Usuário anônimo autenticado com sucesso! ID:", userId);
+            })
+            .catch((error) => {
+                console.error("Erro na autenticação anônima:", error);
+            });
 
-<script>
-    function showScreen(screenId) {
+        // Lógica para a navegação das telas
         const screens = document.querySelectorAll('.screen');
-        screens.forEach(screen => {
-            screen.classList.remove('active');
+        const navButtons = document.querySelectorAll('button[data-screen]');
+        const backButtons = document.querySelectorAll('button[data-back-to]');
+        const loginBtn = document.getElementById('loginBtn');
+        let currentUserType = null;
+        const welcomeScreenButtons = document.querySelectorAll('#welcome-screen button');
+
+        const showScreen = (screenId) => {
+            screens.forEach(screen => screen.classList.remove('active'));
+            const targetScreen = document.getElementById(screenId + '-screen');
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+                updateScreenLogic(screenId);
+            }
+        };
+
+        welcomeScreenButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                currentUserType = button.dataset.userType;
+                showScreen('login');
+            });
         });
-        document.getElementById(screenId).classList.add('active');
-    }
-
-    function showMessage(message, type = 'success') {
-        const messageBox = document.getElementById('message-box');
-        messageBox.textContent = message;
         
-        if (type === 'success') {
-            messageBox.style.backgroundColor = '#4CAF50';
-            messageBox.style.color = '#fff';
-        } else if (type === 'error') {
-            messageBox.style.backgroundColor = '#F44336';
-            messageBox.style.color = '#fff';
-        }
+        loginBtn.addEventListener('click', () => {
+            if (currentUserType === 'cliente') {
+                showScreen('cliente');
+            } else if (currentUserType === 'motoboy') {
+                showScreen('motoboy');
+            } else {
+                showScreen('welcome');
+            }
+        });
+
+        backButtons.forEach(button => {
+            button.addEventListener('click', () => showScreen(button.dataset.backTo));
+        });
+
+        document.getElementById('navigateToCadastro').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentUserType === 'cliente') {
+                showScreen('cadastro-cliente');
+            } else if (currentUserType === 'motoboy') {
+                showScreen('cadastro-motoboy');
+            }
+        });
+
+        // Funções para renderizar cards
+        const renderPedidoCard = (pedido, container) => {
+            const card = document.createElement('div');
+            card.className = 'bg-white p-4 rounded-xl shadow-md border-2 border-orange-500';
+            card.innerHTML = `
+                <p class="text-sm font-semibold text-orange-600">ID do Pedido: ${pedido.id}</p>
+                <p class="text-lg font-bold text-black mt-1">📍 Coleta: <span class="text-gray-600 font-normal">${pedido.enderecoColeta}</span></p>
+                <p class="text-lg font-bold text-black mt-1">🏁 Entrega: <span class="text-gray-600 font-normal">${pedido.enderecoEntrega}</span></p>
+                <p class="text-sm font-semibold text-gray-500 mt-2">Status: <span class="text-orange-600">${pedido.status.replace(/_/g, ' ')}</span></p>
+                <p class="text-sm text-gray-500 mt-1">Peso: ${pedido.peso}kg | Tipo: ${pedido.tipoEntrega} | Tamanho: ${pedido.tamanho}</p>
+                ${pedido.motoboyId ? `<p class="text-sm text-gray-500 mt-1">Motoboy ID: ${pedido.motoboyId}</p>` : ''}
+            `;
+            if (pedido.status === 'aguardando_motoboy') {
+                const acceptBtn = document.createElement('button');
+                acceptBtn.textContent = 'Aceitar Corrida';
+                acceptBtn.className = 'mt-4 w-full bg-orange-600 text-white font-bold py-2 px-4 rounded-full hover:bg-orange-700 transition-colors transform hover:scale-105';
+                acceptBtn.addEventListener('click', () => aceitarPedido(pedido.id, userId));
+                card.appendChild(acceptBtn);
+            }
+            container.appendChild(card);
+        };
+
+        const renderClienteCard = (cliente, container) => {
+            const card = document.createElement('div');
+            card.className = 'bg-white p-4 rounded-xl shadow-md border-2 border-orange-500';
+            card.innerHTML = `
+                <p class="text-sm font-semibold text-orange-600">ID do Cliente: ${cliente.id}</p>
+                <p class="text-lg font-bold text-black mt-1">Nome: <span class="text-gray-600 font-normal">${cliente.nome}</span></p>
+                <p class="text-lg font-bold text-black mt-1">Endereço: <span class="text-gray-600 font-normal">${cliente.endereco}</span></p>
+                <p class="text-lg font-bold text-black mt-1">Telefone: <span class="text-gray-600 font-normal">${cliente.telefone}</span></p>
+            `;
+            container.appendChild(card);
+        };
         
-        messageBox.style.opacity = 1;
-        messageBox.style.visibility = 'visible';
+        const renderMotoboyCard = (motoboy, container) => {
+            const card = document.createElement('div');
+            card.className = 'bg-white p-4 rounded-xl shadow-md border-2 border-orange-500';
+            card.innerHTML = `
+                <p class="text-sm font-semibold text-orange-600">ID do Motoboy: ${motoboy.id}</p>
+                <p class="text-lg font-bold text-black mt-1">Nome: <span class="text-gray-600 font-normal">${motoboy.nome}</span></p>
+                <p class="text-lg font-bold text-black mt-1">Endereço: <span class="text-gray-600 font-normal">${motoboy.endereco}</span></p>
+                <p class="text-lg font-bold text-black mt-1">Telefone: <span class="text-gray-600 font-normal">${motoboy.telefone}</span></p>
+                <p class="text-sm text-gray-500 mt-2">CPF: <span class="text-black">${motoboy.cpf}</span></p>
+                <p class="text-sm text-gray-500 mt-1">CNH: <span class="text-black">${motoboy.habilitacao}</span></p>
+                <p class="text-sm text-gray-500 mt-1">Vencimento da Habilitação: <span class="text-black">${motoboy.vencimentoHabilitacao}</span></p>
+                <p class="text-sm text-gray-500 mt-2">Habilitação: <span class="text-blue-500 underline">${motoboy.fotoHabilitacao}</span></p>
+                <p class="text-lg font-bold text-black mt-1">Moto: <span class="text-gray-600 font-normal">${motoboy.marcaMoto} ${motoboy.modeloMoto}</span></p>
+            `;
+            container.appendChild(card);
+        };
+
+        // Lógica para controle de telas e dados em tempo real
+        let motoboyUnsubscribe = () => {};
+        let adminUnsubscribePedidos = () => {};
+        let adminUnsubscribeClientes = () => {};
+        let adminUnsubscribeMotoboys = () => {};
+        let clienteUnsubscribePedidos = () => {};
+        let currentMotoboySwitchListener = null;
+
+        const updateScreenLogic = (screenId) => {
+            // Cancela todos os listeners para evitar vazamento de memória e conflito
+            if (motoboyUnsubscribe) motoboyUnsubscribe();
+            if (adminUnsubscribePedidos) adminUnsubscribePedidos();
+            if (adminUnsubscribeClientes) adminUnsubscribeClientes();
+            if (adminUnsubscribeMotoboys) adminUnsubscribeMotoboys();
+            if (clienteUnsubscribePedidos) clienteUnsubscribePedidos();
+
+            const pedidosCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/pedidos`);
+            const clientesCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/clientes`);
+            const motoboysCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/motoboys`);
+            
+            if (screenId === 'cliente') {
+                const clienteStatus = document.getElementById('clienteStatus');
+                clienteStatus.textContent = 'Carregando seus pedidos...';
+                // Listener para o cliente acompanhar seus próprios pedidos
+                clienteUnsubscribePedidos = onSnapshot(query(pedidosCollection, where('clienteId', '==', userId)), (querySnapshot) => {
+                    const pedidos = [];
+                    querySnapshot.forEach(doc => pedidos.push({ ...doc.data(), id: doc.id }));
+                    console.log('Pedidos do cliente atualizados:', pedidos);
+                    clienteStatus.textContent = 'Pedidos carregados.';
+                }, error => {
+                    console.error("Erro ao carregar pedidos do cliente:", error);
+                    clienteStatus.textContent = 'Erro ao carregar seus pedidos.';
+                });
+            } else if (screenId === 'motoboy') {
+                const motoboySwitch = document.getElementById('motoboySwitch');
+                const motoboyStatusText = document.getElementById('motoboyStatusText');
+                const motoboyJobsContainer = document.getElementById('motoboyJobsContainer');
+                const motoboyNoJobs = document.getElementById('motoboyNoJobs');
+                const motoboyStatusMessage = document.getElementById('motoboyStatusMessage');
+
+                // Reinicia o switch do motoboy se ele estiver em outra tela
+                motoboySwitch.checked = false;
+                motoboyStatusText.textContent = 'Offline';
+                motoboyStatusText.classList.remove('text-green-500');
+                motoboyStatusText.classList.add('text-gray-700');
+                motoboyJobsContainer.innerHTML = '';
+                motoboyJobsContainer.appendChild(motoboyNoJobs);
+                motoboyStatusMessage.textContent = 'Fique online para receber pedidos!';
+
+                // Remove o listener anterior do switch para não acumular
+                if(currentMotoboySwitchListener) {
+                    motoboySwitch.removeEventListener('change', currentMotoboySwitchListener);
+                }
+
+                // Listener para o motoboy
+                currentMotoboySwitchListener = (event) => {
+                    if (event.target.checked) {
+                        motoboyStatusText.textContent = 'Online';
+                        motoboyStatusText.classList.remove('text-gray-700');
+                        motoboyStatusText.classList.add('text-green-500');
+
+                        motoboyUnsubscribe = onSnapshot(query(pedidosCollection, where('status', '==', 'aguardando_motoboy')), (querySnapshot) => {
+                            motoboyJobsContainer.innerHTML = '';
+                            if (!querySnapshot.empty) {
+                                querySnapshot.forEach(doc => renderPedidoCard({ ...doc.data(), id: doc.id }, motoboyJobsContainer));
+                                motoboyStatusMessage.textContent = 'Novo pedido disponível!';
+                            } else {
+                                motoboyJobsContainer.appendChild(motoboyNoJobs);
+                                motoboyStatusMessage.textContent = 'Nenhum pedido disponível.';
+                            }
+                        }, error => {
+                            console.error("Erro ao buscar pedidos:", error);
+                            motoboyStatusMessage.textContent = 'Erro ao buscar pedidos.';
+                        });
+                    } else {
+                        motoboyStatusText.textContent = 'Offline';
+                        motoboyStatusText.classList.remove('text-green-500');
+                        motoboyStatusText.classList.add('text-gray-700');
+                        motoboyJobsContainer.innerHTML = '';
+                        motoboyJobsContainer.appendChild(motoboyNoJobs);
+                        motoboyStatusMessage.textContent = 'Fique online para receber pedidos!';
+                        if (motoboyUnsubscribe) {
+                             motoboyUnsubscribe();
+                             motoboyUnsubscribe = () => {}; // Reset
+                        }
+                    }
+                };
+
+                motoboySwitch.addEventListener('change', currentMotoboySwitchListener);
+            } else if (screenId === 'admin') {
+                const adminPedidosContainer = document.getElementById('adminPedidosContainer');
+                const adminClientesContainer = document.getElementById('adminClientesContainer');
+                const adminMotoboysContainer = document.getElementById('adminMotoboysContainer');
+
+                // Listeners para o painel do administrador
+                adminUnsubscribePedidos = onSnapshot(pedidosCollection, (querySnapshot) => {
+                    adminPedidosContainer.innerHTML = '';
+                    if (!querySnapshot.empty) {
+                        querySnapshot.forEach(doc => renderPedidoCard({ ...doc.data(), id: doc.id }, adminPedidosContainer));
+                    } else {
+                        adminPedidosContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum pedido no sistema.</p>`;
+                    }
+                }, error => { console.error("Erro ao carregar dados de pedidos do admin:", error); });
+
+                adminUnsubscribeClientes = onSnapshot(clientesCollection, (querySnapshot) => {
+                    adminClientesContainer.innerHTML = '';
+                    if (!querySnapshot.empty) {
+                        querySnapshot.forEach(doc => renderClienteCard({ ...doc.data(), id: doc.id }, adminClientesContainer));
+                    } else {
+                        adminClientesContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum cliente cadastrado.</p>`;
+                    }
+                }, error => { console.error("Erro ao carregar dados de clientes do admin:", error); });
+                
+                adminUnsubscribeMotoboys = onSnapshot(motoboysCollection, (querySnapshot) => {
+                    adminMotoboysContainer.innerHTML = '';
+                    if (!querySnapshot.empty) {
+                        querySnapshot.forEach(doc => renderMotoboyCard({ ...doc.data(), id: doc.id }, adminMotoboysContainer));
+                    } else {
+                        adminMotoboysContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum motoboy cadastrado.</p>`;
+                    }
+                }, error => { console.error("Erro ao carregar dados de motoboys do admin:", error); });
+            }
+        };
         
-        setTimeout(() => {
-            messageBox.style.opacity = 0;
-            messageBox.style.visibility = 'hidden';
-        }, 3000);
-    }
+        // Lógica da Tela do Cliente
+        const solicitarBtn = document.getElementById('solicitarBtn');
+        solicitarBtn.addEventListener('click', async () => {
+            const enderecoColeta = document.getElementById('enderecoColetaInput').value.trim();
+            const enderecoEntrega = document.getElementById('enderecoEntregaInput').value.trim();
+            const peso = parseFloat(document.getElementById('pesoInput').value);
+            const tamanho = document.getElementById('tamanhoInput').value;
+            const tipoEntrega = document.getElementById('tipoEntregaInput').value;
+            const clienteStatus = document.getElementById('clienteStatus');
+            const pesoWarning = document.getElementById('pesoWarning');
+            
+            if (!enderecoColeta || !enderecoEntrega || isNaN(peso) || peso <= 0 || !tamanho || !tipoEntrega) {
+                clienteStatus.textContent = 'Por favor, preencha todos os campos.';
+                return;
+            }
+            
+            if (peso > 10) {
+                pesoWarning.classList.remove('hidden');
+                clienteStatus.textContent = 'Peso acima do limite de 10kg.';
+                return;
+            } else {
+                pesoWarning.classList.add('hidden');
+            }
 
-    function processPurchase() {
-        const ticketType = document.getElementById('ticket-type').value;
-        const quantity = document.getElementById('quantity').value;
-        showMessage(`Você comprou ${quantity} bilhete(s) de ${ticketType}.`, 'success');
-        showScreen('screen1');
-    }
+            if (!db) { clienteStatus.textContent = 'Erro de conexão com o banco de dados.'; return; }
 
-    function processRecharge() {
-        const cardNumber = document.getElementById('card-number').value;
-        const amount = document.getElementById('recharge-amount').value;
-        if (cardNumber.length === 0) {
-            showMessage('Por favor, digite o número do cartão.', 'error');
-            return;
-        }
-        showMessage(`Você recarregou R$${amount} no cartão ${cardNumber}.`, 'success');
-        showScreen('screen1');
-    }
-</script>
+            clienteStatus.textContent = 'Enviando pedido...';
+            const pedidoData = {
+                enderecoColeta: enderecoColeta,
+                enderecoEntrega: enderecoEntrega,
+                peso,
+                tamanho,
+                tipoEntrega,
+                status: 'aguardando_motoboy',
+                clienteId: userId,
+                timestamp: Date.now()
+            };
 
+            try {
+                await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/public/data/pedidos`), pedidoData);
+                clienteStatus.textContent = 'Pedido enviado! Aguarde a confirmação.';
+            } catch (e) {
+                console.error("Erro ao enviar pedido:", e);
+                clienteStatus.textContent = 'Erro ao enviar pedido.';
+            }
+        });
+
+        // Lógica de aceitar pedido para o motoboy
+        const aceitarPedido = async (pedidoId, motoboyId) => {
+            try {
+                const pedidoRef = doc(db, `artifacts/${firebaseConfig.appId}/public/data/pedidos`, pedidoId);
+                await updateDoc(pedidoRef, { status: 'a_caminho_da_loja', motoboyId: motoboyId });
+                document.getElementById('motoboyStatusMessage').textContent = 'Corrida aceita! Vá para o local de retirada.';
+            } catch (e) {
+                console.error("Erro ao aceitar pedido:", e);
+                document.getElementById('motoboyStatusMessage').textContent = 'Não foi possível aceitar a corrida.';
+            }
+        };
+
+        // Lógica da Tela de Cadastro de Clientes
+        const cadastrarClienteBtn = document.getElementById('cadastrarClienteBtn');
+        cadastrarClienteBtn.addEventListener('click', async () => {
+            const nome = document.getElementById('nomeClienteInput').value.trim();
+            const email = document.getElementById('emailClienteInput').value.trim();
+            const senha = document.getElementById('senhaClienteInput').value.trim();
+            const endereco = document.getElementById('enderecoClienteInput').value.trim();
+            const telefone = document.getElementById('telefoneClienteInput').value.trim();
+            const status = document.getElementById('clienteCadastroStatus');
+
+            if (!nome || !email || !senha || !endereco || !telefone) {
+                status.textContent = 'Por favor, preencha todos os campos.';
+                return;
+            }
+
+            if (!db) { status.textContent = 'Erro de conexão com o banco de dados.'; return; }
+
+            status.textContent = 'Cadastrando...';
+            const clienteData = { nome, email, endereco, telefone, userId };
+            
+            try {
+                await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/public/data/clientes`), clienteData);
+                status.textContent = 'Cliente cadastrado com sucesso!';
+            } catch (e) {
+                console.error("Erro ao cadastrar cliente:", e);
+                status.textContent = 'Erro ao cadastrar cliente.';
+            }
+        });
+
+        // Lógica da Tela de Cadastro de Motoboys
+        const cadastrarMotoboyBtn = document.getElementById('cadastrarMotoboyBtn');
+        const fotoHabilitacaoInput = document.getElementById('fotoHabilitacaoInput');
+        const docMotoInput = document.getElementById('docMotoInput');
+        const fotoHabilitacaoLabel = document.getElementById('fotoHabilitacaoLabel');
+        const docMotoLabel = document.getElementById('docMotoLabel');
+
+        fotoHabilitacaoInput.addEventListener('change', () => {
+            if (fotoHabilitacaoInput.files.length > 0) {
+                fotoHabilitacaoLabel.textContent = fotoHabilitacaoInput.files[0].name;
+            }
+        });
+        docMotoInput.addEventListener('change', () => {
+            if (docMotoInput.files.length > 0) {
+                docMotoLabel.textContent = docMotoInput.files[0].name;
+            }
+        });
+
+        cadastrarMotoboyBtn.addEventListener('click', async () => {
+            const nome = document.getElementById('nomeMotoboyInput').value.trim();
+            const email = document.getElementById('emailMotoboyInput').value.trim();
+            const senha = document.getElementById('senhaMotoboyInput').value.trim();
+            const endereco = document.getElementById('enderecoMotoboyInput').value.trim();
+            const telefone = document.getElementById('telefoneMotoboyInput').value.trim();
+            const cpf = document.getElementById('cpfMotoboyInput').value.trim();
+            const habilitacao = document.getElementById('habilitacaoInput').value.trim();
+            const vencimentoHabilitacao = document.getElementById('vencimentoHabilitacaoInput').value.trim();
+            const marcaMoto = document.getElementById('marcaMotoInput').value.trim();
+            const modeloMoto = document.getElementById('modeloMotoInput').value.trim();
+            const anoMoto = document.getElementById('anoMotoInput').value.trim();
+            const corMoto = document.getElementById('corMotoInput').value.trim();
+            const status = document.getElementById('motoboyCadastroStatus');
+
+            if (!nome || !email || !senha || !endereco || !telefone || !cpf || !habilitacao || !vencimentoHabilitacao || !marcaMoto || !modeloMoto || !anoMoto || !corMoto) {
+                status.textContent = 'Por favor, preencha todos os campos.';
+                return;
+            }
+
+            if (!db) { status.textContent = 'Erro de conexão com o banco de dados.'; return; }
+
+            status.textContent = 'Cadastrando motoboy...';
+            const motoboyData = { 
+                nome, 
+                email, 
+                endereco, 
+                telefone, 
+                cpf, 
+                habilitacao, 
+                vencimentoHabilitacao,
+                marcaMoto,
+                modeloMoto,
+                anoMoto,
+                corMoto,
+                fotoHabilitacao: fotoHabilitacaoInput.files.length > 0 ? fotoHabilitacaoInput.files[0].name : 'N/A',
+                docMoto: docMotoInput.files.length > 0 ? docMotoInput.files[0].name : 'N/A',
+                userId 
+            };
+            
+            try {
+                await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/public/data/motoboys`), motoboyData);
+                status.textContent = 'Motoboy cadastrado com sucesso!';
+            } catch (e) {
+                console.error("Erro ao cadastrar motoboy:", e);
+                status.textContent = 'Erro ao cadastrar motoboy.';
+            }
+        });
+
+    </script>
 </body>
 </html>
