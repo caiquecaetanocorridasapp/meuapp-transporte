@@ -6,7 +6,7 @@
     <title>Pira Pass - A Solução Completa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+        @import url('https://fonts.w/fulls.com/css2?family=Inter:wght@400;500;700;900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -16,12 +16,57 @@
         .screen.active {
             display: flex;
         }
+        /* Estilos para a janela de visualização */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            padding: 20px;
+            border-radius: 1rem;
+            max-width: 90%;
+            max-height: 90%;
+            overflow: auto;
+            position: relative;
+        }
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+        }
+        .close-btn:hover,
+        .close-btn:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body class="bg-white text-black min-h-screen p-4">
 
     <div class="fixed top-4 left-1/2 -translate-x-1/2 bg-orange-500 rounded-full shadow-lg p-2 flex items-center justify-center space-x-2 z-50">
         <button data-screen="admin" class="px-4 py-2 rounded-full text-sm font-semibold text-white bg-orange-600 transition-colors hover:text-black hover:bg-white">Admin</button>
+    </div>
+
+    <div id="previewModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <div id="previewContent"></div>
+        </div>
     </div>
 
     <div id="welcome-screen" class="screen active flex-col items-center justify-center min-h-screen">
@@ -244,13 +289,16 @@
                 console.error("Erro na autenticação anônima:", error);
             });
 
-        // Lógica para a navegação das telas
+        // Lógica para a navegação das telas e modal de visualização
         const screens = document.querySelectorAll('.screen');
         const navButtons = document.querySelectorAll('button[data-screen]');
         const backButtons = document.querySelectorAll('button[data-back-to]');
         const loginBtn = document.getElementById('loginBtn');
         let currentUserType = null;
         const welcomeScreenButtons = document.querySelectorAll('#welcome-screen button');
+        const previewModal = document.getElementById('previewModal');
+        const previewContent = document.getElementById('previewContent');
+        const closeBtn = document.querySelector('.close-btn');
 
         const showScreen = (screenId) => {
             screens.forEach(screen => screen.classList.remove('active'));
@@ -260,6 +308,21 @@
                 updateScreenLogic(screenId);
             }
         };
+
+        const showPreview = (content) => {
+            previewContent.innerHTML = content;
+            previewModal.style.display = 'flex';
+        };
+
+        closeBtn.addEventListener('click', () => {
+            previewModal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === previewModal) {
+                previewModal.style.display = 'none';
+            }
+        });
 
         welcomeScreenButtons.forEach(button => {
             button.addEventListener('click', () => {
@@ -279,7 +342,7 @@
         });
 
         backButtons.forEach(button => {
-            button.addEventListener('click', () => showScreen(button.dataset.backTo));
+            button.addEventListener('click', () => showScreen(button.dataset.back-to));
         });
 
         document.getElementById('navigateToCadastro').addEventListener('click', (e) => {
@@ -336,7 +399,7 @@
                 <p class="text-sm text-gray-500 mt-2">CPF: <span class="text-black">${motoboy.cpf}</span></p>
                 <p class="text-sm text-gray-500 mt-1">CNH: <span class="text-black">${motoboy.habilitacao}</span></p>
                 <p class="text-sm text-gray-500 mt-1">Vencimento da Habilitação: <span class="text-black">${motoboy.vencimentoHabilitacao}</span></p>
-                <p class="text-sm text-gray-500 mt-2">Habilitação: <span class="text-blue-500 underline">${motoboy.fotoHabilitacao}</span></p>
+                <p class="text-sm text-gray-500 mt-2">Habilitação: <a href="#" data-file="${motoboy.fotoHabilitacao}" class="text-blue-500 underline view-file">Visualizar</a></p>
                 <p class="text-lg font-bold text-black mt-1">Moto: <span class="text-gray-600 font-normal">${motoboy.marcaMoto} ${motoboy.modeloMoto}</span></p>
             `;
             container.appendChild(card);
@@ -462,6 +525,19 @@
                     } else {
                         adminMotoboysContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum motoboy cadastrado.</p>`;
                     }
+                    
+                    // Adiciona evento de clique para os links de visualização
+                    document.querySelectorAll('.view-file').forEach(link => {
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const fileName = e.target.dataset.file;
+                            if (fileName && fileName !== 'N/A') {
+                                showPreview(`<p>Conteúdo do arquivo simulado: <strong>${fileName}</strong></p><p class="mt-4 text-sm text-gray-500"><em>Em um aplicativo real, o arquivo seria carregado aqui.</em></p>`);
+                            } else {
+                                showPreview(`<p>Nenhum arquivo para visualizar.</p>`);
+                            }
+                        });
+                    });
                 }, error => { console.error("Erro ao carregar dados de motoboys do admin:", error); });
             }
         };
@@ -548,6 +624,7 @@
             try {
                 await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/public/data/clientes`), clienteData);
                 status.textContent = 'Cliente cadastrado com sucesso!';
+                setTimeout(() => showScreen('login'), 2000); // **MUDANÇA AQUI**
             } catch (e) {
                 console.error("Erro ao cadastrar cliente:", e);
                 status.textContent = 'Erro ao cadastrar cliente.';
@@ -615,6 +692,7 @@
             try {
                 await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/public/data/motoboys`), motoboyData);
                 status.textContent = 'Motoboy cadastrado com sucesso!';
+                setTimeout(() => showScreen('login'), 2000); // **MUDANÇA AQUI**
             } catch (e) {
                 console.error("Erro ao cadastrar motoboy:", e);
                 status.textContent = 'Erro ao cadastrar motoboy.';
