@@ -6,7 +6,7 @@
     <title>Pira Pass - A Solução Completa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.w/fulls.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -342,7 +342,8 @@
         });
 
         backButtons.forEach(button => {
-            button.addEventListener('click', () => showScreen(button.dataset.back-to));
+            // CÓDIGO CORRIGIDO AQUI!
+            button.addEventListener('click', () => showScreen(button.dataset.backTo));
         });
 
         document.getElementById('navigateToCadastro').addEventListener('click', (e) => {
