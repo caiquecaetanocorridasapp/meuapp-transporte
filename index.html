@@ -1,746 +1,159 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pira Pass - A Solução Completa</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style> // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
+import android.net.Uri
+import android.os.Bundle
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
+import android.util.Log
+import android.widget.Button
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import java.util.Locale
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBB5RZqaGMg551vFnoYe3dI2ZVG5v8Ax7E",
-  authDomain: "piramotos-c68f1.firebaseapp.com",
-  projectId: "piramotos-c68f1",
-  // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+class MainActivity : AppCompatActivity() {
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBB5RZqaGMg551vFnoYe3dI2ZVG5v8Ax7E",
-  authDomain: "piramotos-c68f1.firebaseapp.com",
-  projectId: "piramotos-c68f1",
-  storageBucket: "piramotos-c68f1.firebasestorage.app",
-  messagingSenderId: "194344495789",
-  appId: "1:194344495789:web:79413bfc83f569032f3424",
-  measurementId: "G-EWNZHFDFKZ"
-};
+    private lateinit var tts: TextToSpeech
+    private lateinit var speechRecognizer: SpeechRecognizer
+    private lateinit var locationManager: LocationManager
+    private val RECORD_AUDIO_PERMISSION = 101
+    private val LOCATION_PERMISSION = 102
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app)storageBucket: "piramotos-c68f1.firebasestorage.app",
-  messagingSenderId: "194344495789",
-  appId: "1:194344495789:web:d6520a7ef5276cee2f3424",
-  measurementId: "G-TGVBF28NHE"
-};
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
+        // Inicializa o botão de voz
+        val falarBtn: Button = findViewById(R.id.falar_btn)
+        falarBtn.setOnClickListener {
+            checkPermissions()
         }
-        .screen {
-            display: none;
-        }
-        .screen.active {
-            display: flex;
-        }
-        /* Estilos para a janela de visualização */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.8);
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            padding: 20px;
-            border-radius: 1rem;
-            max-width: 90%;
-            max-height: 90%;
-            overflow: auto;
-            position: relative;
-        }
-        .close-btn {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            position: absolute;
-            top: 10px;
-            right: 20px;
-        }
-        .close-btn:hover,
-        .close-btn:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body class="bg-white text-black min-h-screen p-4">
 
-    <div class="fixed top-4 left-1/2 -translate-x-1/2 bg-orange-500 rounded-full shadow-lg p-2 flex items-center justify-center space-x-2 z-50">
-        <button data-screen="admin" class="px-4 py-2 rounded-full text-sm font-semibold text-white bg-orange-600 transition-colors hover:text-black hover:bg-white">Admin</button>
-    </div>
-
-    <div id="previewModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <div id="previewContent"></div>
-        </div>
-    </div>
-
-    <div id="welcome-screen" class="screen active flex-col items-center justify-center min-h-screen">
-        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
-            <h1 class="text-5xl font-black text-black text-center uppercase tracking-widest">
-                Pira Pass
-            </h1>
-            <h2 class="text-lg font-bold text-gray-700 text-center uppercase tracking-widest">
-                Suas entregas sempre em boas mãos
-            </h2>
-            <button data-screen="login" data-user-type="cliente" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105 active:scale-95">
-                EU SOU CLIENTE
-            </button>
-            <button data-screen="login" data-user-type="motoboy" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105 active:scale-95">
-                EU SOU ENTREGADOR
-            </button>
-        </div>
-    </div>
-
-    <div id="login-screen" class="screen flex-col items-center justify-center min-h-screen">
-        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
-            <button data-back-to="welcome" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">
-                &larr; Voltar
-            </button>
-            <h1 class="text-4xl font-black text-black text-center">LOGIN</h1>
-            <input type="email" id="loginEmail" placeholder="E-mail..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="password" id="loginPassword" placeholder="Senha..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <button id="loginBtn" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105">
-                Entrar
-            </button>
-            <p class="mt-4 text-center text-sm text-gray-600">
-                Não tem cadastro? <a href="#" id="navigateToCadastro" class="text-orange-600 underline font-semibold">Cadastre-se aqui</a>.
-            </p>
-        </div>
-    </div>
-
-    <div id="cadastro-cliente-screen" class="screen flex-col items-center justify-center min-h-screen">
-        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
-            <button data-back-to="login" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">
-                &larr; Voltar
-            </button>
-            <h1 class="text-4xl font-black text-black text-center">CADASTRO CLIENTE</h1>
-            <input type="text" id="nomeClienteInput" placeholder="Nome Completo..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="email" id="emailClienteInput" placeholder="E-mail..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="password" id="senhaClienteInput" placeholder="Senha..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="text" id="enderecoClienteInput" placeholder="Endereço..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="tel" id="telefoneClienteInput" placeholder="Telefone..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <button id="cadastrarClienteBtn" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105">
-                Cadastrar
-            </button>
-            <div id="clienteCadastroStatus" class="mt-4 text-center text-orange-600 text-lg font-semibold"></div>
-        </div>
-    </div>
-
-    <div id="cadastro-motoboy-screen" class="screen flex-col items-center justify-center min-h-screen">
-        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
-            <button data-back-to="login" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">
-                &larr; Voltar
-            </button>
-            <h1 class="text-4xl font-black text-black text-center">CADASTRO MOTOBOY</h1>
-            <input type="text" id="nomeMotoboyInput" placeholder="Nome Completo..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="email" id="emailMotoboyInput" placeholder="E-mail..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="password" id="senhaMotoboyInput" placeholder="Senha..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="text" id="enderecoMotoboyInput" placeholder="Endereço..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="tel" id="telefoneMotoboyInput" placeholder="Telefone..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="text" id="cpfMotoboyInput" placeholder="CPF..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="text" id="habilitacaoInput" placeholder="Nº da Habilitação..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="date" id="vencimentoHabilitacaoInput" placeholder="Vencimento da Habilitação" class="w-full p-4 rounded-full border-2 border-orange-500">
-            
-            <label class="w-full flex items-center justify-between bg-white p-4 rounded-full border-2 border-orange-500 cursor-pointer">
-                <span id="fotoHabilitacaoLabel" class="text-gray-500">Selecione a foto da Habilitação (PDF ou imagem)...</span>
-                <input type="file" id="fotoHabilitacaoInput" class="hidden" accept=".pdf,image/*">
-            </label>
-
-            <input type="text" id="marcaMotoInput" placeholder="Marca da Moto..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="text" id="modeloMotoInput" placeholder="Modelo da Moto..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="text" id="anoMotoInput" placeholder="Ano da Moto..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            <input type="text" id="corMotoInput" placeholder="Cor da Moto..." class="w-full p-4 rounded-full border-2 border-orange-500">
-            
-            <label class="w-full flex items-center justify-between bg-white p-4 rounded-full border-2 border-orange-500 cursor-pointer">
-                <span id="docMotoLabel" class="text-gray-500">Selecione o documento da Moto (PDF ou imagem)...</span>
-                <input type="file" id="docMotoInput" class="hidden" accept=".pdf,image/*">
-            </label>
-
-            <button id="cadastrarMotoboyBtn" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105">
-                Cadastrar Motoboy
-            </button>
-            <div id="motoboyCadastroStatus" class="mt-4 text-center text-orange-600 text-lg font-semibold"></div>
-        </div>
-    </div>
-    
-    <div id="cliente-screen" class="screen flex-col items-center justify-center min-h-screen">
-        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
-            <button data-back-to="welcome" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">
-                &larr; Voltar
-            </button>
-            <h1 class="text-5xl font-black text-black text-center uppercase tracking-widest">
-                Pira Pass
-            </h1>
-            <h2 class="text-lg font-bold text-gray-700 text-center uppercase tracking-widest">
-                Suas entregas sempre em boas mãos
-            </h2>
-            
-            <div class="w-full relative">
-                <input type="text" id="enderecoColetaInput" placeholder="Endereço de Coleta..." class="w-full p-4 pl-12 rounded-full border-2 border-orange-500 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all text-black placeholder-gray-500" />
-                <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            </div>
-
-            <div class="w-full relative">
-                <input type="text" id="enderecoEntregaInput" placeholder="Endereço de Entrega..." class="w-full p-4 pl-12 rounded-full border-2 border-orange-500 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all text-black placeholder-gray-500" />
-                <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            </div>
-
-            <div class="w-full relative">
-                <input type="number" id="pesoInput" placeholder="Peso da mercadoria (kg)" class="w-full p-4 rounded-full border-2 border-orange-500" min="0" max="10" step="0.1" />
-                <p id="pesoWarning" class="text-sm text-red-500 text-center mt-2 hidden">A mercadoria não pode passar de 10kg!</p>
-            </div>
-            <div class="w-full relative">
-                <select id="tamanhoInput" class="w-full p-4 rounded-full border-2 border-orange-500 bg-white text-black">
-                    <option value="">Selecione o tamanho...</option>
-                    <option value="pequeno">Pequeno</option>
-                    <option value="medio">Médio</option>
-                    <option value="grande">Grande</option>
-                </select>
-            </div>
-            <div class="w-full relative">
-                <select id="tipoEntregaInput" class="w-full p-4 rounded-full border-2 border-orange-500 bg-white text-black">
-                    <option value="">Selecione o tipo de entrega...</option>
-                    <option value="caixa">Caixa de Entrega</option>
-                    <option value="mochila">Mochila</option>
-                    <option value="rede">Rede</option>
-                    <option value="documento">Documento</option>
-                </select>
-            </div>
-
-            <button id="solicitarBtn" class="w-full bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-orange-700 transition-transform transform hover:scale-105 active:scale-95">
-                Solicitar Entrega
-            </button>
-            <div id="clienteStatus" class="mt-4 text-center text-orange-600 text-lg font-semibold"></div>
-        </div>
-    </div>
-
-    <div id="motoboy-screen" class="screen flex-col items-center justify-center min-h-screen">
-        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
-            <button data-back-to="welcome" class="self-start text-gray-600 hover:text-orange-600 transition-colors text-lg font-bold mb-4">
-                &larr; Voltar
-            </button>
-            <h1 class="text-5xl font-black text-black text-center uppercase tracking-widest">
-                Pira Pass
-            </h1>
-            <h2 class="text-lg font-bold text-gray-700 text-center uppercase tracking-widest">
-                Painel do Entregador
-            </h2>
-            <div class="w-full flex items-center justify-between p-4 bg-orange-100 rounded-2xl border-2 border-orange-500">
-                <span id="motoboyStatusText" class="text-2xl font-bold text-gray-700">Offline</span>
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="motoboySwitch" class="sr-only peer" />
-                    <div class="w-14 h-8 bg-gray-400 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-[4px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-500"></div>
-                </label>
-            </div>
-            <h2 class="text-2xl font-bold text-orange-600 mt-4">Corridas Disponíveis</h2>
-            <div id="motoboyJobsContainer" class="w-full space-y-4">
-                <p id="motoboyNoJobs" class="text-center text-gray-500">Fique online para receber pedidos!</p>
-            </div>
-            <div id="motoboyStatusMessage" class="mt-4 text-center text-orange-600 text-lg font-semibold"></div>
-        </div>
-    </div>
-
-    <div id="admin-screen" class="screen flex-col items-center justify-center min-h-screen">
-        <div class="w-full max-w-lg bg-white shadow-2xl rounded-3xl p-8 flex flex-col items-center space-y-6 border-4 border-orange-500">
-            <h1 class="text-5xl font-black text-black text-center uppercase tracking-widest">
-                Pira Pass
-            </h1>
-            <h2 class="text-lg font-bold text-gray-700 text-center uppercase tracking-widest">
-                Painel do Administrador
-            </h2>
-            <h3 class="text-2xl font-bold text-orange-600 mt-8">Todos os Pedidos</h3>
-            <div id="adminPedidosContainer" class="w-full space-y-4">
-                <p class="text-center text-gray-500">Aguardando pedidos...</p>
-            </div>
-            <h3 class="text-2xl font-bold text-orange-600 mt-8">Clientes Cadastrados</h3>
-            <div id="adminClientesContainer" class="w-full space-y-4">
-                <p class="text-center text-gray-500">Nenhum cliente cadastrado.</p>
-            </div>
-            <h3 class="text-2xl font-bold text-orange-600 mt-8">Motoboys Cadastrados</h3>
-            <div id="adminMotoboysContainer" class="w-full space-y-4">
-                <p class="text-center text-gray-500">Nenhum motoboy cadastrado.</p>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // Coloque suas configurações do Firebase aqui!
-        // As informações são encontradas no console do seu projeto Firebase.
-        const firebaseConfig = {
-            apiKey: "SUA_API_KEY",
-            authDomain: "SEU_AUTH_DOMAIN",
-            projectId: "SEU_PROJECT_ID",
-            storageBucket: "SEU_STORAGE_BUCKET",
-            messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-            appId: "SEU_APP_ID"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        // Autenticação anônima para demonstração
-        let userId = null;
-        signInAnonymously(auth)
-            .then(() => {
-                userId = auth.currentUser.uid;
-                console.log("Usuário anônimo autenticado com sucesso! ID:", userId);
-            })
-            .catch((error) => {
-                console.error("Erro na autenticação anônima:", error);
-            });
-
-        // Lógica para a navegação das telas e modal de visualização
-        const screens = document.querySelectorAll('.screen');
-        const navButtons = document.querySelectorAll('button[data-screen]');
-        const backButtons = document.querySelectorAll('button[data-back-to]');
-        const loginBtn = document.getElementById('loginBtn');
-        let currentUserType = null;
-        const welcomeScreenButtons = document.querySelectorAll('#welcome-screen button');
-        const previewModal = document.getElementById('previewModal');
-        const previewContent = document.getElementById('previewContent');
-        const closeBtn = document.querySelector('.close-btn');
-
-        const showScreen = (screenId) => {
-            screens.forEach(screen => screen.classList.remove('active'));
-            const targetScreen = document.getElementById(screenId + '-screen');
-            if (targetScreen) {
-                targetScreen.classList.add('active');
-                updateScreenLogic(screenId);
+        // Inicializa o motor de voz (TextToSpeech)
+        tts = TextToSpeech(this) { status ->
+            if (status != TextToSpeech.ERROR) {
+                tts.language = Locale("pt", "BR")
+                falarComMotorista("E aí, meu! O que você precisa?")
             }
-        };
+        }
 
-        const showPreview = (content) => {
-            previewContent.innerHTML = content;
-            previewModal.style.display = 'flex';
-        };
-
-        closeBtn.addEventListener('click', () => {
-            previewModal.style.display = 'none';
-        });
-
-        window.addEventListener('click', (event) => {
-            if (event.target === previewModal) {
-                previewModal.style.display = 'none';
+        // Inicializa o reconhecedor de fala
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+        speechRecognizer.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {
+                Toast.makeText(this@MainActivity, "Estou ouvindo...", Toast.LENGTH_SHORT).show()
             }
-        });
-
-        welcomeScreenButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                currentUserType = button.dataset.userType;
-                showScreen('login');
-            });
-        });
-        
-        loginBtn.addEventListener('click', () => {
-            if (currentUserType === 'cliente') {
-                showScreen('cliente');
-            } else if (currentUserType === 'motoboy') {
-                showScreen('motoboy');
-            } else {
-                showScreen('welcome');
-            }
-        });
-
-        backButtons.forEach(button => {
-            // CÓDIGO CORRIGIDO AQUI!
-            button.addEventListener('click', () => showScreen(button.dataset.backTo));
-        });
-
-        document.getElementById('navigateToCadastro').addEventListener('click', (e) => {
-            e.preventDefault();
-            if (currentUserType === 'cliente') {
-                showScreen('cadastro-cliente');
-            } else if (currentUserType === 'motoboy') {
-                showScreen('cadastro-motoboy');
-            }
-        });
-
-        // Funções para renderizar cards
-        const renderPedidoCard = (pedido, container) => {
-            const card = document.createElement('div');
-            card.className = 'bg-white p-4 rounded-xl shadow-md border-2 border-orange-500';
-            card.innerHTML = `
-                <p class="text-sm font-semibold text-orange-600">ID do Pedido: ${pedido.id}</p>
-                <p class="text-lg font-bold text-black mt-1">📍 Coleta: <span class="text-gray-600 font-normal">${pedido.enderecoColeta}</span></p>
-                <p class="text-lg font-bold text-black mt-1">🏁 Entrega: <span class="text-gray-600 font-normal">${pedido.enderecoEntrega}</span></p>
-                <p class="text-sm font-semibold text-gray-500 mt-2">Status: <span class="text-orange-600">${pedido.status.replace(/_/g, ' ')}</span></p>
-                <p class="text-sm text-gray-500 mt-1">Peso: ${pedido.peso}kg | Tipo: ${pedido.tipoEntrega} | Tamanho: ${pedido.tamanho}</p>
-                ${pedido.motoboyId ? `<p class="text-sm text-gray-500 mt-1">Motoboy ID: ${pedido.motoboyId}</p>` : ''}
-            `;
-            if (pedido.status === 'aguardando_motoboy') {
-                const acceptBtn = document.createElement('button');
-                acceptBtn.textContent = 'Aceitar Corrida';
-                acceptBtn.className = 'mt-4 w-full bg-orange-600 text-white font-bold py-2 px-4 rounded-full hover:bg-orange-700 transition-colors transform hover:scale-105';
-                acceptBtn.addEventListener('click', () => aceitarPedido(pedido.id, userId));
-                card.appendChild(acceptBtn);
-            }
-            container.appendChild(card);
-        };
-
-        const renderClienteCard = (cliente, container) => {
-            const card = document.createElement('div');
-            card.className = 'bg-white p-4 rounded-xl shadow-md border-2 border-orange-500';
-            card.innerHTML = `
-                <p class="text-sm font-semibold text-orange-600">ID do Cliente: ${cliente.id}</p>
-                <p class="text-lg font-bold text-black mt-1">Nome: <span class="text-gray-600 font-normal">${cliente.nome}</span></p>
-                <p class="text-lg font-bold text-black mt-1">Endereço: <span class="text-gray-600 font-normal">${cliente.endereco}</span></p>
-                <p class="text-lg font-bold text-black mt-1">Telefone: <span class="text-gray-600 font-normal">${cliente.telefone}</span></p>
-            `;
-            container.appendChild(card);
-        };
-        
-        const renderMotoboyCard = (motoboy, container) => {
-            const card = document.createElement('div');
-            card.className = 'bg-white p-4 rounded-xl shadow-md border-2 border-orange-500';
-            card.innerHTML = `
-                <p class="text-sm font-semibold text-orange-600">ID do Motoboy: ${motoboy.id}</p>
-                <p class="text-lg font-bold text-black mt-1">Nome: <span class="text-gray-600 font-normal">${motoboy.nome}</span></p>
-                <p class="text-lg font-bold text-black mt-1">Endereço: <span class="text-gray-600 font-normal">${motoboy.endereco}</span></p>
-                <p class="text-lg font-bold text-black mt-1">Telefone: <span class="text-gray-600 font-normal">${motoboy.telefone}</span></p>
-                <p class="text-sm text-gray-500 mt-2">CPF: <span class="text-black">${motoboy.cpf}</span></p>
-                <p class="text-sm text-gray-500 mt-1">CNH: <span class="text-black">${motoboy.habilitacao}</span></p>
-                <p class="text-sm text-gray-500 mt-1">Vencimento da Habilitação: <span class="text-black">${motoboy.vencimentoHabilitacao}</span></p>
-                <p class="text-sm text-gray-500 mt-2">Habilitação: <a href="#" data-file="${motoboy.fotoHabilitacao}" class="text-blue-500 underline view-file">Visualizar</a></p>
-                <p class="text-lg font-bold text-black mt-1">Moto: <span class="text-gray-600 font-normal">${motoboy.marcaMoto} ${motoboy.modeloMoto}</span></p>
-            `;
-            container.appendChild(card);
-        };
-
-        // Lógica para controle de telas e dados em tempo real
-        let motoboyUnsubscribe = () => {};
-        let adminUnsubscribePedidos = () => {};
-        let adminUnsubscribeClientes = () => {};
-        let adminUnsubscribeMotoboys = () => {};
-        let clienteUnsubscribePedidos = () => {};
-        let currentMotoboySwitchListener = null;
-
-        const updateScreenLogic = (screenId) => {
-            // Cancela todos os listeners para evitar vazamento de memória e conflito
-            if (motoboyUnsubscribe) motoboyUnsubscribe();
-            if (adminUnsubscribePedidos) adminUnsubscribePedidos();
-            if (adminUnsubscribeClientes) adminUnsubscribeClientes();
-            if (adminUnsubscribeMotoboys) adminUnsubscribeMotoboys();
-            if (clienteUnsubscribePedidos) clienteUnsubscribePedidos();
-
-            const pedidosCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/pedidos`);
-            const clientesCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/clientes`);
-            const motoboysCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/motoboys`);
-            
-            if (screenId === 'cliente') {
-                const clienteStatus = document.getElementById('clienteStatus');
-                clienteStatus.textContent = 'Carregando seus pedidos...';
-                // Listener para o cliente acompanhar seus próprios pedidos
-                clienteUnsubscribePedidos = onSnapshot(query(pedidosCollection, where('clienteId', '==', userId)), (querySnapshot) => {
-                    const pedidos = [];
-                    querySnapshot.forEach(doc => pedidos.push({ ...doc.data(), id: doc.id }));
-                    console.log('Pedidos do cliente atualizados:', pedidos);
-                    clienteStatus.textContent = 'Pedidos carregados.';
-                }, error => {
-                    console.error("Erro ao carregar pedidos do cliente:", error);
-                    clienteStatus.textContent = 'Erro ao carregar seus pedidos.';
-                });
-            } else if (screenId === 'motoboy') {
-                const motoboySwitch = document.getElementById('motoboySwitch');
-                const motoboyStatusText = document.getElementById('motoboyStatusText');
-                const motoboyJobsContainer = document.getElementById('motoboyJobsContainer');
-                const motoboyNoJobs = document.getElementById('motoboyNoJobs');
-                const motoboyStatusMessage = document.getElementById('motoboyStatusMessage');
-
-                // Reinicia o switch do motoboy se ele estiver em outra tela
-                motoboySwitch.checked = false;
-                motoboyStatusText.textContent = 'Offline';
-                motoboyStatusText.classList.remove('text-green-500');
-                motoboyStatusText.classList.add('text-gray-700');
-                motoboyJobsContainer.innerHTML = '';
-                motoboyJobsContainer.appendChild(motoboyNoJobs);
-                motoboyStatusMessage.textContent = 'Fique online para receber pedidos!';
-
-                // Remove o listener anterior do switch para não acumular
-                if(currentMotoboySwitchListener) {
-                    motoboySwitch.removeEventListener('change', currentMotoboySwitchListener);
+            // AQUI O CÓDIGO PEGA O RESULTADO DA VOZ
+            override fun onResults(results: Bundle?) {
+                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                if (matches != null && matches.isNotEmpty()) {
+                    val comando = matches[0].toLowerCase(Locale("pt", "BR"))
+                    processarComando(comando)
                 }
+            }
+            override fun onEndOfSpeech() {}
+            override fun onError(error: Int) {
+                Log.e("SpeechRecognizer", "Erro: $error")
+                falarComMotorista("Eita, não entendi. Tente novamente.")
+            }
+            override fun onBeginningOfSpeech() {}
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+            override fun onPartialResults(partialResults: Bundle?) {}
+            override fun onRmsChanged(rmsdB: Float) {}
+            override fun onBufferReceived(buffer: ByteArray?) {}
+        })
+    }
 
-                // Listener para o motoboy
-                currentMotoboySwitchListener = (event) => {
-                    if (event.target.checked) {
-                        motoboyStatusText.textContent = 'Online';
-                        motoboyStatusText.classList.remove('text-gray-700');
-                        motoboyStatusText.classList.add('text-green-500');
+    private fun checkPermissions() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), RECORD_AUDIO_PERMISSION)
+        } else {
+            startListening()
+        }
+    }
 
-                        motoboyUnsubscribe = onSnapshot(query(pedidosCollection, where('status', '==', 'aguardando_motoboy')), (querySnapshot) => {
-                            motoboyJobsContainer.innerHTML = '';
-                            if (!querySnapshot.empty) {
-                                querySnapshot.forEach(doc => renderPedidoCard({ ...doc.data(), id: doc.id }, motoboyJobsContainer));
-                                motoboyStatusMessage.textContent = 'Novo pedido disponível!';
-                            } else {
-                                motoboyJobsContainer.appendChild(motoboyNoJobs);
-                                motoboyStatusMessage.textContent = 'Nenhum pedido disponível.';
-                            }
-                        }, error => {
-                            console.error("Erro ao buscar pedidos:", error);
-                            motoboyStatusMessage.textContent = 'Erro ao buscar pedidos.';
-                        });
-                    } else {
-                        motoboyStatusText.textContent = 'Offline';
-                        motoboyStatusText.classList.remove('text-green-500');
-                        motoboyStatusText.classList.add('text-gray-700');
-                        motoboyJobsContainer.innerHTML = '';
-                        motoboyJobsContainer.appendChild(motoboyNoJobs);
-                        motoboyStatusMessage.textContent = 'Fique online para receber pedidos!';
-                        if (motoboyUnsubscribe) {
-                             motoboyUnsubscribe();
-                             motoboyUnsubscribe = () => {}; // Reset
+    private fun startListening() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR")
+        speechRecognizer.startListening(intent)
+    }
+
+    private fun falarComMotorista(texto: String) {
+        tts.speak(texto, TextToSpeech.QUEUE_FLUSH, null, "")
+    }
+
+    private fun processarComando(comando: String) {
+        // Lógica de comando para abrir o mapa, tempo, etc.
+        when {
+            comando.contains("calcular tempo para") || comando.contains("me leve para") -> {
+                val destino = comando.substringAfter("para ").trim()
+                if (destino.isNotEmpty()) {
+                    falarComMotorista("Calculando o tempo de viagem para $destino.")
+                    val uri = Uri.parse("https://www.google.com/maps/dir/?api=1&destination=${Uri.encode(destino)}")
+                    val mapIntent = Intent(Intent.ACTION_VIEW, uri)
+                    startActivity(mapIntent)
+                } else {
+                    falarComMotorista("Pra onde você quer ir? Preciso de um destino, sô!")
+                }
+            }
+            comando.contains("previsão do tempo para") || comando.contains("tempo em") -> {
+                val cidade = if (comando.contains("previsão do tempo para")) {
+                    comando.substringAfter("para ").trim()
+                } else {
+                    comando.substringAfter("em ").trim()
+                }
+                if (cidade.isNotEmpty()) {
+                    falarComMotorista("Beleza! Olhando a previsão do tempo para $cidade.")
+                    val uri = Uri.parse("https://www.google.com/search?q=previsão+do+tempo+em+${Uri.encode(cidade)}")
+                    val webIntent = Intent(Intent.ACTION_VIEW, uri)
+                    startActivity(webIntent)
+                } else {
+                    falarComMotorista("De qual cidade você quer saber a previsão do tempo?")
+                }
+            }
+            comando.contains("onde eu estou") || comando.contains("qual a minha localização") -> {
+                falarComMotorista("Beleza! Procurando sua localização agora.")
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION)
+                } else {
+                    // Pega a localização do usuário
+                    locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
+                    val locationListener = object : LocationListener {
+                        override fun onLocationChanged(location: Location) {
+                            falarComMotorista("Encontrei! Abrindo o mapa com sua localização atual.")
+                            val uri = Uri.parse("https://www.google.com/maps/@${location.latitude},${location.longitude},15z")
+                            val mapIntent = Intent(Intent.ACTION_VIEW, uri)
+                            startActivity(mapIntent)
+                            locationManager.removeUpdates(this) // Remove o listener depois de encontrar a localização
                         }
                     }
-                };
-
-                motoboySwitch.addEventListener('change', currentMotoboySwitchListener);
-            } else if (screenId === 'admin') {
-                const adminPedidosContainer = document.getElementById('adminPedidosContainer');
-                const adminClientesContainer = document.getElementById('adminClientesContainer');
-                const adminMotoboysContainer = document.getElementById('adminMotoboysContainer');
-
-                // Listeners para o painel do administrador
-                adminUnsubscribePedidos = onSnapshot(pedidosCollection, (querySnapshot) => {
-                    adminPedidosContainer.innerHTML = '';
-                    if (!querySnapshot.empty) {
-                        querySnapshot.forEach(doc => renderPedidoCard({ ...doc.data(), id: doc.id }, adminPedidosContainer));
-                    } else {
-                        adminPedidosContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum pedido no sistema.</p>`;
-                    }
-                }, error => { console.error("Erro ao carregar dados de pedidos do admin:", error); });
-
-                adminUnsubscribeClientes = onSnapshot(clientesCollection, (querySnapshot) => {
-                    adminClientesContainer.innerHTML = '';
-                    if (!querySnapshot.empty) {
-                        querySnapshot.forEach(doc => renderClienteCard({ ...doc.data(), id: doc.id }, adminClientesContainer));
-                    } else {
-                        adminClientesContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum cliente cadastrado.</p>`;
-                    }
-                }, error => { console.error("Erro ao carregar dados de clientes do admin:", error); });
-                
-                adminUnsubscribeMotoboys = onSnapshot(motoboysCollection, (querySnapshot) => {
-                    adminMotoboysContainer.innerHTML = '';
-                    if (!querySnapshot.empty) {
-                        querySnapshot.forEach(doc => renderMotoboyCard({ ...doc.data(), id: doc.id }, adminMotoboysContainer));
-                    } else {
-                        adminMotoboysContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum motoboy cadastrado.</p>`;
-                    }
-                    
-                    // Adiciona evento de clique para os links de visualização
-                    document.querySelectorAll('.view-file').forEach(link => {
-                        link.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            const fileName = e.target.dataset.file;
-                            if (fileName && fileName !== 'N/A') {
-                                showPreview(`<p>Conteúdo do arquivo simulado: <strong>${fileName}</strong></p><p class="mt-4 text-sm text-gray-500"><em>Em um aplicativo real, o arquivo seria carregado aqui.</em></p>`);
-                            } else {
-                                showPreview(`<p>Nenhum arquivo para visualizar.</p>`);
-                            }
-                        });
-                    });
-                }, error => { console.error("Erro ao carregar dados de motoboys do admin:", error); });
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0f, locationListener)
+                }
             }
-        };
-        
-        // Lógica da Tela do Cliente
-        const solicitarBtn = document.getElementById('solicitarBtn');
-        solicitarBtn.addEventListener('click', async () => {
-            const enderecoColeta = document.getElementById('enderecoColetaInput').value.trim();
-            const enderecoEntrega = document.getElementById('enderecoEntregaInput').value.trim();
-            const peso = parseFloat(document.getElementById('pesoInput').value);
-            const tamanho = document.getElementById('tamanhoInput').value;
-            const tipoEntrega = document.getElementById('tipoEntregaInput').value;
-            const clienteStatus = document.getElementById('clienteStatus');
-            const pesoWarning = document.getElementById('pesoWarning');
-            
-            if (!enderecoColeta || !enderecoEntrega || isNaN(peso) || peso <= 0 || !tamanho || !tipoEntrega) {
-                clienteStatus.textContent = 'Por favor, preencha todos os campos.';
-                return;
+            comando.contains("o que tem na frente") -> {
+                falarComMotorista("Tem um radar a duzentos metros. Cuidado com a velocidade!")
             }
-            
-            if (peso > 10) {
-                pesoWarning.classList.remove('hidden');
-                clienteStatus.textContent = 'Peso acima do limite de 10kg.';
-                return;
-            } else {
-                pesoWarning.classList.add('hidden');
+            comando.contains("tocar uma música") -> {
+                falarComMotorista("Beleza! Tocando 'Moda de Viola' agora.")
             }
-
-            if (!db) { clienteStatus.textContent = 'Erro de conexão com o banco de dados.'; return; }
-
-            clienteStatus.textContent = 'Enviando pedido...';
-            const pedidoData = {
-                enderecoColeta: enderecoColeta,
-                enderecoEntrega: enderecoEntrega,
-                peso,
-                tamanho,
-                tipoEntrega,
-                status: 'aguardando_motoboy',
-                clienteId: userId,
-                timestamp: Date.now()
-            };
-
-            try {
-                await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/public/data/pedidos`), pedidoData);
-                clienteStatus.textContent = 'Pedido enviado! Aguarde a confirmação.';
-            } catch (e) {
-                console.error("Erro ao enviar pedido:", e);
-                clienteStatus.textContent = 'Erro ao enviar pedido.';
+            comando.contains("preciso descansar") -> {
+                falarComMotorista("É pra já! O próximo posto de gasolina fica a dez quilômetros.")
             }
-        });
-
-        // Lógica de aceitar pedido para o motoboy
-        const aceitarPedido = async (pedidoId, motoboyId) => {
-            try {
-                const pedidoRef = doc(db, `artifacts/${firebaseConfig.appId}/public/data/pedidos`, pedidoId);
-                await updateDoc(pedidoRef, { status: 'a_caminho_da_loja', motoboyId: motoboyId });
-                document.getElementById('motoboyStatusMessage').textContent = 'Corrida aceita! Vá para o local de retirada.';
-            } catch (e) {
-                console.error("Erro ao aceitar pedido:", e);
-                document.getElementById('motoboyStatusMessage').textContent = 'Não foi possível aceitar a corrida.';
+            comando.contains("desligar") || comando.contains("tchau") -> {
+                falarComMotorista("Fechado! Boa viagem e até a próxima, meu.")
+                finish()
             }
-        };
-
-        // Lógica da Tela de Cadastro de Clientes
-        const cadastrarClienteBtn = document.getElementById('cadastrarClienteBtn');
-        cadastrarClienteBtn.addEventListener('click', async () => {
-            const nome = document.getElementById('nomeClienteInput').value.trim();
-            const email = document.getElementById('emailClienteInput').value.trim();
-            const senha = document.getElementById('senhaClienteInput').value.trim();
-            const endereco = document.getElementById('enderecoClienteInput').value.trim();
-            const telefone = document.getElementById('telefoneClienteInput').value.trim();
-            const status = document.getElementById('clienteCadastroStatus');
-
-            if (!nome || !email || !senha || !endereco || !telefone) {
-                status.textContent = 'Por favor, preencha todos os campos.';
-                return;
+            else -> {
+                falarComMotorista("Não entendi o que você disse. Pode repetir, por favor?")
             }
-
-            if (!db) { status.textContent = 'Erro de conexão com o banco de dados.'; return; }
-
-            status.textContent = 'Cadastrando...';
-            const clienteData = { nome, email, endereco, telefone, userId };
-            
-            try {
-                await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/public/data/clientes`), clienteData);
-                status.textContent = 'Cliente cadastrado com sucesso!';
-                setTimeout(() => showScreen('login'), 2000); // **MUDANÇA AQUI**
-            } catch (e) {
-                console.error("Erro ao cadastrar cliente:", e);
-                status.textContent = 'Erro ao cadastrar cliente.';
-            }
-        });
-
-        // Lógica da Tela de Cadastro de Motoboys
-        const cadastrarMotoboyBtn = document.getElementById('cadastrarMotoboyBtn');
-        const fotoHabilitacaoInput = document.getElementById('fotoHabilitacaoInput');
-        const docMotoInput = document.getElementById('docMotoInput');
-        const fotoHabilitacaoLabel = document.getElementById('fotoHabilitacaoLabel');
-        const docMotoLabel = document.getElementById('docMotoLabel');
-
-        fotoHabilitacaoInput.addEventListener('change', () => {
-            if (fotoHabilitacaoInput.files.length > 0) {
-                fotoHabilitacaoLabel.textContent = fotoHabilitacaoInput.files[0].name;
-            }
-        });
-        docMotoInput.addEventListener('change', () => {
-            if (docMotoInput.files.length > 0) {
-                docMotoLabel.textContent = docMotoInput.files[0].name;
-            }
-        });
-
-        cadastrarMotoboyBtn.addEventListener('click', async () => {
-            const nome = document.getElementById('nomeMotoboyInput').value.trim();
-            const email = document.getElementById('emailMotoboyInput').value.trim();
-            const senha = document.getElementById('senhaMotoboyInput').value.trim();
-            const endereco = document.getElementById('enderecoMotoboyInput').value.trim();
-            const telefone = document.getElementById('telefoneMotoboyInput').value.trim();
-            const cpf = document.getElementById('cpfMotoboyInput').value.trim();
-            const habilitacao = document.getElementById('habilitacaoInput').value.trim();
-            const vencimentoHabilitacao = document.getElementById('vencimentoHabilitacaoInput').value.trim();
-            const marcaMoto = document.getElementById('marcaMotoInput').value.trim();
-            const modeloMoto = document.getElementById('modeloMotoInput').value.trim();
-            const anoMoto = document.getElementById('anoMotoInput').value.trim();
-            const corMoto = document.getElementById('corMotoInput').value.trim();
-            const status = document.getElementById('motoboyCadastroStatus');
-
-            if (!nome || !email || !senha || !endereco || !telefone || !cpf || !habilitacao || !vencimentoHabilitacao || !marcaMoto || !modeloMoto || !anoMoto || !corMoto) {
-                status.textContent = 'Por favor, preencha todos os campos.';
-                return;
-            }
-
-            if (!db) { status.textContent = 'Erro de conexão com o banco de dados.'; return; }
-
-            status.textContent = 'Cadastrando motoboy...';
-            const motoboyData = { 
-                nome, 
-                email, 
-                endereco, 
-                telefone, 
-                cpf, 
-                habilitacao, 
-                vencimentoHabilitacao,
-                marcaMoto,
-                modeloMoto,
-                anoMoto,
-                corMoto,
-                fotoHabilitacao: fotoHabilitacaoInput.files.length > 0 ? fotoHabilitacaoInput.files[0].name : 'N/A',
-                docMoto: docMotoInput.files.length > 0 ? docMotoInput.files[0].name : 'N/A',
-                userId 
-            };
-            
-            try {
-                await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/public/data/motoboys`), motoboyData);
-                status.textContent = 'Motoboy cadastrado com sucesso!';
-                setTimeout(() => showScreen('login'), 2000); // **MUDANÇA AQUI**
-            } catch (e) {
-                console.error("Erro ao cadastrar motoboy:", e);
-                status.textContent = 'Erro ao cadastrar motoboy.';
-            }
-        });
-
-    </script>
-</body>
-</html>
+        }
+    }
+}
